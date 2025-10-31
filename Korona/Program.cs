@@ -9,36 +9,75 @@ namespace Korona
         static void Main(string[] args)
         {
             string KoronaApiUrl = ConfigurationManager.AppSettings["KoronaApiUrl"];
+            string KoronaBaseUrl = ConfigurationManager.AppSettings["KoronaBaseUrl"];
+            string KoronaApiUrl_185 = ConfigurationManager.AppSettings["KoronaBaseUrl185"];
+            string diiffer_Url = ConfigurationManager.AppSettings["diiffer_Url"];
             string DeveloperId = ConfigurationManager.AppSettings["DeveloperId"];
             StoreSettings storeSetting = new StoreSettings();
             storeSetting.IntializeStoreSettings();
             string merchantId = "";
             string accessToken = "";
-            try        
+            try
             {
                 foreach (var itm in storeSetting.PosDetails)
                 {
                     try
                     {
-                        if (itm.StoreSettings.StoreId == 11962)
+                        if (itm.StoreSettings.StoreId == 10002)
+                        {
+
+                        }
+                        else
+                        {
+                            continue;
+                        }
+                        if (string.IsNullOrEmpty(itm.StoreSettings.POSSettings.BaseUrl))
+                        {
+                            if (diiffer_Url.Contains(itm.StoreSettings.StoreId.ToString()))
+                            {
+                                if (itm.StoreSettings.StoreId != 11950)
+                                {
+                                    merchantId = itm.StoreSettings.POSSettings.merchanId;
+                                    accessToken = itm.StoreSettings.POSSettings.tokenid;
+                                    clsKorona obj = new clsKorona();
+                                    obj.DeleteProductPath();
+                                    obj.CreateKoronaProductResponseFile("web/api/v3/" + KoronaApiUrl + itm.StoreSettings.POSSettings.merchanId + "products?includeDeleted=false", itm.StoreSettings.POSSettings.tokenid, KoronaApiUrl_185);
+                                    obj.setupenv();
+                                    obj.CreateKoronaStockResponseFile("web/api/v3/" + KoronaApiUrl + itm.StoreSettings.POSSettings.merchanId + itm.StoreSettings.POSSettings.OrganisationalId, itm.StoreSettings.POSSettings.tokenid, KoronaApiUrl_185);
+                                    obj.DeleteTaxPath();
+                                    obj.CreateKoronaTaxResponseFile("web/api/v3/" + KoronaApiUrl + itm.StoreSettings.POSSettings.merchanId + "/salesTaxes", itm.StoreSettings.POSSettings.tokenid, KoronaApiUrl_185);
+                                    obj.KoronaProductDetails(itm.StoreSettings.POSSettings.tax, itm.StoreSettings.POSSettings.StorePriceGroupId, itm.StoreSettings.StoreId);
+                                }
+                            }
+                            else
+                            {
+                                merchantId = itm.StoreSettings.POSSettings.merchanId;
+                                accessToken = itm.StoreSettings.POSSettings.tokenid;
+                                clsKorona obj = new clsKorona();
+                                obj.DeleteProductPath();
+                                obj.CreateKoronaProductResponseFile("web/api/v3/" + KoronaApiUrl + itm.StoreSettings.POSSettings.merchanId + "products?includeDeleted=false", itm.StoreSettings.POSSettings.tokenid, KoronaBaseUrl);
+                                obj.setupenv();
+                                obj.CreateKoronaStockResponseFile("web/api/v3/" + KoronaApiUrl + itm.StoreSettings.POSSettings.merchanId + itm.StoreSettings.POSSettings.OrganisationalId, itm.StoreSettings.POSSettings.tokenid, KoronaBaseUrl);
+                                obj.KoronaProductDetails(itm.StoreSettings.POSSettings.tax, itm.StoreSettings.POSSettings.StorePriceGroupId, itm.StoreSettings.StoreId);
+                            }
+                        }
+                        else
                         {
                             merchantId = itm.StoreSettings.POSSettings.merchanId;
                             accessToken = itm.StoreSettings.POSSettings.tokenid;
-                            clsKorona obj = new clsKorona();                       
-                            obj.DeleteProductPath();
-                            obj.CreateKoronaProductResponseFile("web/api/v3/" + KoronaApiUrl + itm.StoreSettings.POSSettings.merchanId + "products?includeDeleted=false", itm.StoreSettings.POSSettings.tokenid);
-                            obj.setupenv();
-                            obj.CreateKoronaStockResponseFile("web/api/v3/" + KoronaApiUrl + itm.StoreSettings.POSSettings.merchanId + itm.StoreSettings.POSSettings.OrganisationalId, itm.StoreSettings.POSSettings.tokenid);
-                            obj.KoronaProductDetails(itm.StoreSettings.POSSettings.tax, itm.StoreSettings.POSSettings.StorePriceGroupId, itm.StoreSettings.StoreId);
+                            clsKorona2 obj = new clsKorona2(itm.StoreSettings.StoreId, itm.StoreSettings.POSSettings.BaseUrl, merchantId, accessToken, itm.StoreSettings.POSSettings.StorePriceGroupId, itm.StoreSettings.POSSettings.OrganisationalId, itm.StoreSettings.POSSettings.tax, itm.StoreSettings.POSSettings.deposit);
+                            Console.WriteLine();
                         }
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine(ex.Message);
+                       Console.WriteLine(ex.Message);
                     }
-
-                    finally { }
+                    finally 
+                    { 
+                    }
                 }
+                
             }
             catch (Exception ex)
             {

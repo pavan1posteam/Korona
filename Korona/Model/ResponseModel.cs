@@ -99,8 +99,14 @@ public class Result
     public List<Subproduct> subproducts { get; set; }
     public List<Tag> tag { get; set; }
     public AlternativeSector alternativeSector { get; set; }
+    public List<Container> containers { get; set; }
 }
-
+public class Container
+{
+    public List<Price> prices { get; set; }
+    public Product product { get; set; }
+    public bool defaultContainer { get; set; }
+}
 public class ResponseModel
 {
     public int currentPage { get; set; }

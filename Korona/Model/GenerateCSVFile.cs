@@ -12,8 +12,10 @@ namespace Korona.Model
     class GenerateCSVFile
     {
         string discountable = ConfigurationManager.AppSettings["dicountable"];
+        
         public static string GenerateCSVFiles<T>(IList<T> list, string Name, int StoreId, string BaseUrl)
         {
+            string differentfile = ConfigurationManager.AppSettings["differentfile"];
 
             if (list == null || list.Count == 0) return "Quantity and Price are 0 or less than 0";
             if (!Directory.Exists(BaseUrl + "\\" + StoreId + "\\Upload\\"))
@@ -41,15 +43,15 @@ namespace Korona.Model
                 //this is the header row
                 foreach (PropertyInfo pi in props)
                 {
-                    if ( pi.Name != "Productid" && pi.Name != "cat" && pi.Name != "Discountable" && StoreId != 11481)
+                    if (pi.Name != "Productid" && pi.Name != "cat" && differentfile.Contains(StoreId.ToString()))
                     {
                         sw.Write(pi.Name + ",");
                     }
-                    else if (pi.Name != "Productid" && pi.Name != "cat" && StoreId == 11481)
+                    else if (pi.Name != "Productid" && pi.Name != "cat" && pi.Name != "Discountable")
                     {
                         sw.Write(pi.Name + ",");
-                    } 
-                        
+                    }
+
                 }
                 sw.Write(newLine);
 
@@ -59,7 +61,7 @@ namespace Korona.Model
                     //this acts as datacolumn
                     foreach (PropertyInfo pi in props)
                     {
-                        if (pi.Name != "Productid" && pi.Name != "cat" && pi.Name != "Discountable" && StoreId != 11481)
+                        if (pi.Name != "Productid" && pi.Name != "cat" && differentfile.Contains(StoreId.ToString()))
                         {
                             //this is the row+col intersection (the value)
                             string whatToWrite =
@@ -70,7 +72,7 @@ namespace Korona.Model
 
                             sw.Write(whatToWrite.Trim());
                         }
-                        else if (pi.Name != "Productid" && pi.Name != "cat" && StoreId == 11481)
+                        else if (pi.Name != "Productid" && pi.Name != "cat" && pi.Name != "Discountable")
                         {
                             //this is the row+col intersection (the value)
                             string whatToWrite =
@@ -81,7 +83,6 @@ namespace Korona.Model
 
                             sw.Write(whatToWrite.Trim());
                         }
-
                     }
                     sw.Write(newLine);
                 }

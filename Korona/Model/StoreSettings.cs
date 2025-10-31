@@ -19,6 +19,8 @@ namespace Korona.Model
             List<POSSetting> posdetails = new List<POSSetting>();
             try
             {
+                List<SqlParameter> sparams = new List<SqlParameter>();
+                sparams.Add(new SqlParameter("@PosId", 8));
                 string constr = ConfigurationManager.AppSettings.Get("LiquorAppsConnectionString");
                 using (SqlConnection con = new SqlConnection(constr))
                 {
@@ -26,6 +28,7 @@ namespace Korona.Model
                     {
                         cmd.Connection = con;
                         cmd.CommandText = "usp_ts_GetStorePosSetting";
+                       // cmd.Parameters.Add(sparams[0]);
                         cmd.CommandType = CommandType.StoredProcedure;
                         using (SqlDataAdapter da = new SqlDataAdapter())
                         {
@@ -45,6 +48,10 @@ namespace Korona.Model
                             StoreSetting obj = new StoreSetting();
                             obj.StoreId = Convert.ToInt16(dr["StoreId"] == DBNull.Value ? 0 : dr["StoreId"]);
                             obj.POSSettings = JsonConvert.DeserializeObject<Setting>(pobj.Setting);
+                            if(string.IsNullOrEmpty(pobj.Setting))
+                            {
+                                continue;
+                            }
                             pobj.PosName = dr["PosName"].ToString();
                             pobj.PosId = Convert.ToInt32(dr["PosId"]);
                             pobj.StoreSettings = obj;
@@ -86,6 +93,8 @@ namespace Korona.Model
         public decimal liquortaxrateperlitre { get; set; }
         public string StorePriceGroupId { get; set; }
         public string OrganisationalId { get; set; }
+        public string BaseUrl { get; set; }
+        public decimal deposit { get; set; }
     }
     public class StoreSetting {
         public int StoreId { get; set; }

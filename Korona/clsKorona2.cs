@@ -1,30 +1,22 @@
-﻿using RestSharp;
+﻿using Korona.Model;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using RestSharp;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Newtonsoft.Json;
-using Korona.Model;
-using Newtonsoft.Json.Linq;
-using System.Data;
-using System.Reflection;
 using System.Configuration;
 using System.IO;
-using System.Text.RegularExpressions;
+using System.Linq;
 using System.Net;
+using System.Reflection;
+using System.Text;
+using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 
 namespace Korona
 {
-    public class clsKorona
+    class clsKorona2
     {
-        public string organizationalUnits { get; set; }
-
-        List<FinalResult> finalResultList = new List<FinalResult>();
-        List<Fullname> fullnameList = new List<Fullname>();
-        List<QuantityPrice> PriceResult = new List<QuantityPrice>();
-        List<codes> CodeResult = new List<codes>();
-
         string baseUrl = ConfigurationManager.AppSettings["KoronaBaseUrl"];
         string apiUrl = ConfigurationManager.AppSettings["KoronaApiUrl"];
         string folderPath = ConfigurationManager.AppSettings["BaseDirectory"];
@@ -49,21 +41,108 @@ namespace Korona
         string TaxFromResp = ConfigurationManager.AppSettings["TaxFromResp"];
         string AllowCBD = ConfigurationManager.AppSettings["AllowCBD"];
         string IncludeContainers = ConfigurationManager.AppSettings["IncludeContainers"];
+        string Includedeposit = ConfigurationManager.AppSettings["Includedeposit"];
+        string Beerdeposit = ConfigurationManager.AppSettings["Beerdeposit"];
         string AppendArticleUPCs = ConfigurationManager.AppSettings["AppendArticleUPCs"];
 
+        public int StoreId;
+        public string BaseUrl;
+        public string MerchantId;
+        public string ApiKey;
+        public string StorePriceGroupId;
+        public string OrganisationalId;
+        public string Tax;
+        public decimal Deposit;
 
         List<ResponseModel> resmdl = new List<ResponseModel>();
         List<StockResponseModel> stkModel = new List<StockResponseModel>();
         List<TaxResponseModel.Root> taxModel = new List<TaxResponseModel.Root>();
 
+        List<FinalResult> finalResultList = new List<FinalResult>();
+        List<Fullname> fullnameList = new List<Fullname>();
+        List<QuantityPrice> PriceResult = new List<QuantityPrice>();
+        List<codes> CodeResult = new List<codes>();
+
         string pathProduct = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), @"ProductDetails_Korona.json");
         string pathStock = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), @"KoronaProductStock.json");
         string PathProductTax = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), @"ProductTax.json");
-        public clsKorona()
+
+        public clsKorona2(int _storeid, string _BaseUrl, string _MerchantId, string _ApiKey,string _StorePriceGroupId, string _OrganisationalId, string _tax, decimal _deposit)
+        {
+            StoreId = _storeid;
+            BaseUrl = _BaseUrl;
+            MerchantId = _MerchantId;
+            ApiKey = _ApiKey;
+            StorePriceGroupId = _StorePriceGroupId;
+            OrganisationalId = _OrganisationalId;
+            Tax = _tax;
+            Deposit = _deposit;
+            Start();
+        }
+        public void Start()
+        {
+            DeleteProductPath();
+            CreateKoronaProductResponseFile(BaseUrl, ApiKey);
+            setupenv();
+            CreateKoronaStockResponseFile(BaseUrl, ApiKey);
+            if (BaseUrl.Contains("185"))
+            {
+                DeleteTaxPath();
+                CreateKoronaTaxResponseFile(BaseUrl, ApiKey);
+            }
+            KoronaProductDetails(Tax, StorePriceGroupId, StoreId);
+        }
+
+        public void DeleteProductPath()
         {
             if (File.Exists(pathProduct))
             {
                 File.Delete(pathProduct);
+            }
+        }
+        public string getProduct(string BaseUrl, string ApiKey, string value = "", bool first = false)
+        {
+            ResponseModel mdl = new ResponseModel();
+            if (first)
+                value = "/web/api/v3/accounts/" + MerchantId + "/products?includeDeleted=false";
+            var client = new RestClient(BaseUrl + value);
+            var request = new RestRequest(Method.GET);
+            request.AddHeader("Authorization", "Basic " + ApiKey);
+            request.AddHeader("cache-control", "no-cache");
+            request.AddHeader("content-type", "application/x-www-form-urlencoded");
+            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
+            IRestResponse response = client.Execute(request);
+            string content = response.Content;
+            mdl = JsonConvert.DeserializeObject<ResponseModel>(content);
+            resmdl.Add(mdl);
+            //File.AppendAllText("12383.json", content);
+            return content;
+        }
+        public void CreateKoronaProductResponseFile(string BaseUrl, string ApiKey, string value = "")
+        {
+            string content;
+            if (string.IsNullOrEmpty(value))
+                content = getProduct(BaseUrl, ApiKey, value, true);
+            else
+                content = getProduct(BaseUrl, ApiKey, value);
+
+            var jResult = JObject.Parse(content);
+
+            using (StreamWriter sw = new StreamWriter(pathProduct, append: true))
+            {
+                sw.WriteLine(content);
+            }
+            var links = (dynamic)jResult["links"];
+            if (links != null)
+            {
+                foreach (var item in links)
+                {
+                    if (item.Name.ToString().ToUpper() != "PREVIOUS" && item.Name.ToString().ToUpper() != "SELF")
+                    {
+                        CreateKoronaProductResponseFile(BaseUrl , ApiKey, item.Value.ToString());
+                    }
+                    break;
+                }
             }
         }
         public void setupenv()
@@ -74,46 +153,14 @@ namespace Korona
                 File.Delete(pathStock);
             }
         }
-        public void DeleteProductPath()
-        {
-            if (File.Exists(pathProduct))
-            {
-                File.Delete(pathProduct);
-            }
-        }
-
-        public void DeleteTaxPath()
-        {
-            if (File.Exists(PathProductTax))
-            {
-                File.Delete(PathProductTax);
-            }
-        }
-
-        public string getProduct(string param, string accessToken, string Url)
-        {
-            ResponseModel mdl = new ResponseModel();
-            var client = new RestClient(Url + param);
-            var request = new RestRequest(Method.GET);
-            request.AddHeader("Authorization", accessToken);
-            request.AddHeader("cache-control", "no-cache");
-            request.AddHeader("content-type", "application/x-www-form-urlencoded");
-            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
-            IRestResponse response = client.Execute(request);
-            string content = response.Content;
-            mdl = JsonConvert.DeserializeObject<ResponseModel>(content);
-            resmdl.Add(mdl);
-            //File.AppendAllText("12405.json", content);
-
-            return content;
-
-        }
-        public string getStock(string param, string accessToken, string Url)
+        public string getStock(string BaseUrl, string ApiKey, string value = "", bool first = false)
         {
             StockResponseModel stk = new StockResponseModel();
-            var client = new RestClient(Url + param);
+            if (first)
+                value = "/web/api/v3/accounts/" + MerchantId + "/organizationalUnits/" + OrganisationalId + "/productStocks";
+            var client = new RestClient(BaseUrl + value);
             var request = new RestRequest(Method.GET);
-            request.AddHeader("Authorization", accessToken);
+            request.AddHeader("Authorization", "Basic " + ApiKey);
             request.AddHeader("cache-control", "no-cache");
             request.AddHeader("content-type", "application/x-www-form-urlencoded");
             ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
@@ -129,32 +176,13 @@ namespace Korona
             return content;
 
         }
-        public void CreateKoronaProductResponseFile(string url, string accessToken, string Url)
+        public void CreateKoronaStockResponseFile(string BaseUrl, string ApiKey, string value = "")
         {
-            string content = getProduct(url, accessToken, Url);
-
-            var jResult = JObject.Parse(content);
-
-            using (StreamWriter sw = new StreamWriter(pathProduct, append: true))
-            {
-                sw.WriteLine(content);
-            }
-            var links = (dynamic)jResult["links"];
-            if (links != null)
-            {
-                foreach (var item in links)
-                {
-                    if (item.Name.ToString().ToUpper() != "PREVIOUS" && item.Name.ToString().ToUpper() != "SELF")
-                    {
-                        CreateKoronaProductResponseFile(item.Value.ToString(), accessToken, Url);
-                    }
-                    break;
-                }
-            }
-        }
-        public void CreateKoronaStockResponseFile(string url, string accessToken, string Url)
-        {
-            string content = getStock(url, accessToken, Url);
+            string content;
+            if (string.IsNullOrEmpty(value))
+                content = getStock(BaseUrl, ApiKey, value, true);
+            else
+                content = getStock(BaseUrl, ApiKey, value);
             var jResult = JObject.Parse(content);
 
             using (StreamWriter sw = new StreamWriter(pathStock, append: true))
@@ -168,19 +196,27 @@ namespace Korona
                 {
                     if (item.Name.ToString().ToUpper() != "PREVIOUS" && item.Name.ToString().ToUpper() != "SELF")
                     {
-                        CreateKoronaStockResponseFile(item.Value.ToString(), accessToken, Url);
+                        CreateKoronaStockResponseFile(BaseUrl, ApiKey, item.Value.ToString());
                     }
                     break;
                 }
             }
         }
-
-        public string getTax(string param, string accessToken, string Url)
+        public void DeleteTaxPath()
+        {
+            if (File.Exists(PathProductTax))
+            {
+                File.Delete(PathProductTax);
+            }
+        }
+        public string getTax(string BaseUrl, string ApiKey, string value = "", bool first = false)
         {
             TaxResponseModel.Root tax = new TaxResponseModel.Root();
-            var client = new RestClient(Url + param);
+            if (first)
+                value = "/web/api/v3/accounts/" + MerchantId + "/salesTaxes";
+            var client = new RestClient(BaseUrl + value);
             var request = new RestRequest(Method.GET);
-            request.AddHeader("Authorization", accessToken);
+            request.AddHeader("Authorization", "Basic " + ApiKey);
             request.AddHeader("cache-control", "no-cache");
             request.AddHeader("content-type", "application/x-www-form-urlencoded");
             ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
@@ -194,10 +230,13 @@ namespace Korona
             }
             return content;
         }
-
-        public void CreateKoronaTaxResponseFile(string url, string accessToken, string Url)
+        public void CreateKoronaTaxResponseFile(string BaseUrl, string ApiKey, string value = "")
         {
-            string content = getTax(url, accessToken, Url);
+            string content;
+            if (string.IsNullOrEmpty(value))
+                content = getTax(BaseUrl, ApiKey, value, true);
+            else
+                content = getTax(BaseUrl, ApiKey, value);
             var jResult = JObject.Parse(content);
 
             using (StreamWriter sw = new StreamWriter(PathProductTax, append: true))
@@ -211,13 +250,12 @@ namespace Korona
                 {
                     if (item.Name.ToString().ToUpper() != "PREVIOUS" && item.Name.ToString().ToUpper() != "SELF")
                     {
-                        CreateKoronaTaxResponseFile(item.Value.ToString(), accessToken, Url);
+                        CreateKoronaTaxResponseFile(BaseUrl, ApiKey, item.Value.ToString());
                     }
                     break;
                 }
             }
         }
-
         public void KoronaProductDetails(string tax, string StorePriceGroupId, int StoreId)
         {
             try
@@ -237,15 +275,70 @@ namespace Korona
                         {
                             upc = dataitem.number;
                         }
-                        else if (AppendArticleUPCs.Contains(StoreId.ToString()))
+                        else if(AppendArticleUPCs.Contains(StoreId.ToString()))
                         {
-                            upc = dataitem.codes == null ? dataitem.number == null ? "" : "99"+ StoreId+dataitem.number : dataitem.codes.FirstOrDefault().productCode;
+                            upc = dataitem.codes == null ? dataitem.number == null ? "": "99"+StoreId+dataitem.number : dataitem.codes.FirstOrDefault().productCode;
                         }
                         else
                         {
                             upc = dataitem.codes == null ? "" : dataitem.codes.FirstOrDefault().productCode;
-
                         }
+                        finalResult.storeid = StoreId;
+                        if (skunull.Contains(StoreId.ToString()) && !string.IsNullOrEmpty(upc))
+                        {
+                            finalResult.upc = "#" + upc.ToString().Trim();
+                            fullname.upc = finalResult.upc;
+                            finalResult.sku = finalResult.upc;
+                            fullname.sku = finalResult.upc;
+                        }
+                        else if (AppendArticleUPCs.Contains(StoreId.ToString()) && !string.IsNullOrEmpty(upc))
+                        {
+                            finalResult.upc = "#" + upc.ToString().Trim();
+                            fullname.upc = finalResult.upc;
+                            if(!string.IsNullOrEmpty(dataitem.number))
+                            {
+                                finalResult.sku = "#" + dataitem.number.Trim();
+                                fullname.sku = "#" + dataitem.number.Trim();
+                            }
+                            else
+                            {
+                                finalResult.sku = finalResult.upc;
+                                fullname.sku = finalResult.upc;
+                            }
+                        }
+                        else if (upcnull.Contains(StoreId.ToString()))
+                        {
+                            finalResult.upc = "#" + dataitem.number.Trim();
+                            fullname.upc = finalResult.upc;
+                            finalResult.sku = finalResult.upc;
+                            fullname.sku = finalResult.upc;
+                        }
+                        else if (!string.IsNullOrEmpty(upc) && !string.IsNullOrEmpty(dataitem.number))
+                        {
+                            finalResult.upc = "#" + upc.ToString().Trim();
+                            fullname.upc = "#" + upc.ToString().Trim();
+                            finalResult.sku = "#" + dataitem.number.Trim();
+                            fullname.sku = "#" + dataitem.number.Trim();
+                        }
+                        else
+                        {
+                            continue;
+                        }
+
+                        if (different_sku.Contains(StoreId.ToString()))
+                        {
+                            if (!string.IsNullOrEmpty(upc))
+                            {
+                                fullname.sku = "#" + upc.ToString().Trim();
+                                finalResult.sku = "#" + upc.ToString().Trim();
+                            }
+                            else
+                            {
+                                continue;
+                            }
+                        }
+                        //if (Regex.IsMatch(fullname.sku, @"[A-Z]|[a-z]"))
+                        //    continue;
                         //if (Regex.IsMatch(upc,@"[A-Z]|[a-z]"))
                         //    continue;
                         finalResult.Productid = dataitem.id;
@@ -273,9 +366,9 @@ namespace Korona
                             }
                             finalResult.tax = taxrate;
                         }
-                        else 
-                        { 
-                            finalResult.tax = tax; 
+                        else
+                        {
+                            finalResult.tax = tax;
                         }
                         if (tax_category.Contains(StoreId.ToString()))
                         {
@@ -337,69 +430,13 @@ namespace Korona
                             }
                         }
 
-                        finalResult.storeid = StoreId;
-                        if (skunull.Contains(StoreId.ToString()) && !string.IsNullOrEmpty(upc))
-                        {
-                            finalResult.upc = "#" + upc.ToString().Trim();
-                            fullname.upc = finalResult.upc;
-                            finalResult.sku = finalResult.upc;
-                            fullname.sku = finalResult.upc;
-                        }
-                        else if (AppendArticleUPCs.Contains(StoreId.ToString()) && !string.IsNullOrEmpty(upc))
-                        {
-                            finalResult.upc = "#" + upc.ToString().Trim();
-                            fullname.upc = finalResult.upc;
-                            if (!string.IsNullOrEmpty(dataitem.number))
-                            {
-                                finalResult.sku = "#" + dataitem.number.Trim();
-                                fullname.sku = "#" + dataitem.number.Trim();
-                            }
-                            else
-                            {
-                                finalResult.sku = finalResult.upc;
-                                fullname.sku = finalResult.upc;
-                            }
-                        }
-                        else if (!string.IsNullOrEmpty(upc) && !string.IsNullOrEmpty(dataitem.number))
-                        {
-                            finalResult.upc = "#" + upc.ToString().Trim();
-                            fullname.upc = "#" + upc.ToString().Trim();
-                            finalResult.sku = "#" + dataitem.number.Trim();
-                            fullname.sku = "#" + dataitem.number.Trim();
-                        }
-                        else if (upcnull.Contains(StoreId.ToString()))
-                        {
-                            finalResult.upc = "#" + dataitem.number.Trim();
-                            fullname.upc = finalResult.upc;
-                            finalResult.sku = finalResult.upc;
-                            fullname.sku = finalResult.upc;
-
-                        }
-                        else
-                        { 
-                            continue; 
-                        }
-
-                        if (different_sku.Contains(StoreId.ToString()))
-                        {
-                            if (!string.IsNullOrEmpty(upc))
-                            {
-                                fullname.sku = "#" + upc.ToString().Trim();
-                                finalResult.sku = "#" + upc.ToString().Trim();
-                            }
-                            else
-                            { 
-                                continue; 
-                            }
-                        }
-                        //if (Regex.IsMatch(fullname.sku, @"[A-Z]|[a-z]"))
-                        //    continue;
+                        
                         fullname.pcat1 = "";
                         fullname.pcat2 = "";
-                        finalResult.pack = 1;
-                        fullname.pack = 1;
-                        finalResult.uom = "";
-                        fullname.uom = "";
+                        finalResult.pack = getpack(finalResult.StoreProductName);
+                        fullname.pack = finalResult.pack;
+                        finalResult.uom = getVolume(finalResult.StoreProductName);
+                        fullname.uom = finalResult.uom;
                         if (discountable.Contains(StoreId.ToString())) //discountable column as per ticket 19362
                         {
                             var disctble = dataitem.discountable;
@@ -454,7 +491,20 @@ namespace Korona
                         {
                             finalResult.Deposit = 0;
                         }
-
+                        if (Includedeposit.Contains(StoreId.ToString()))
+                        {
+                            if (finalResult.StoreProductName.ToUpper().Contains("BOTTLE"))
+                                finalResult.Deposit = finalResult.pack * Deposit;
+                            else
+                                finalResult.Deposit = 0;
+                        }
+                        if (Beerdeposit.Contains(StoreId.ToString()))
+                        {
+                            if (fullname.pcat.ToUpper().Contains("BEER"))
+                                finalResult.Deposit = finalResult.pack * Deposit;
+                            else
+                                finalResult.Deposit = 0;
+                        }
                         if (qty.Contains(StoreId.ToString()))
                         {
                             if (fullname.pcat.ToUpper() == "BEER" || fullname.pcat.ToUpper() == "CRAFT BEER")
@@ -479,20 +529,12 @@ namespace Korona
                                 finalResult.qty = 50;
                             }
                         }
-                         
+
                         PriceResult = new List<QuantityPrice>();
 
                         List<product> ProductResult = new List<product>();
-                        if(finalResult.pack == 1)
-                        {
-                            finalResult.pack = getpack(finalResult.StoreProductName);
-                            fullname.pack = finalResult.pack;
-                        }
-                        if (string.IsNullOrEmpty(finalResult.uom))
-                        {
-                            finalResult.uom = getVolume(finalResult.StoreProductName);
-                            fullname.uom = finalResult.uom;
-                        }
+
+
                         if (IncludeContainers.Contains(StoreId.ToString()))
                         {
                             var containerrr = dataitem.containers != null ? dataitem.containers.FirstOrDefault(container => container.defaultContainer == true) : null;
@@ -680,7 +722,6 @@ namespace Korona
                                         }
                                     }
                                 }
-                                
                             }
                         }
                         if (PriceResult.Count > 0)
@@ -742,30 +783,6 @@ namespace Korona
             Console.WriteLine("Product File Generated For " + StoreId);
             Console.WriteLine("FULL Name File Generated For " + StoreId);
         }
-        public int getpack(string prodName)
-        {
-            prodName = prodName.ToUpper();
-            var regexMatch = Regex.Match(prodName, @"(?<Result>\d+)PK");
-            var prodPack = regexMatch.Groups["Result"].Value;
-            if (prodPack.Length > 0)
-            {
-                int outVal = 0;
-                int.TryParse(prodPack.Replace("$", ""), out outVal);
-                return outVal;
-            }
-            return 1;
-        }
-        public string getVolume(string prodName)
-        {
-            prodName = prodName.ToUpper();
-            var regexMatch = Regex.Match(prodName, @"(?<Result>\d+)ML| (?<Result>\d+)LTR| (?<Result>\d+)OZ | (?<Result>\d+)L|(?<Result>\d+)\sOZ");
-            var prodPack = regexMatch.Groups["Result"].Value;
-            if (prodPack.Length > 0)
-            {
-                return regexMatch.ToString();
-            }
-            return "";
-        }
         private void KoronaStockList(int StoreId)
         {
             foreach (var item in stkModel)
@@ -773,7 +790,7 @@ namespace Korona
                 foreach (var dataitem in item.results)
                 {
                     var amount = dataitem.amount;
-                    var product = dataitem.product; 
+                    var product = dataitem.product;
                     if (amount.actual > 9999)
                     {
                         continue;
@@ -803,6 +820,30 @@ namespace Korona
                     }
                 }
             }
+        }
+        public int getpack(string prodName)
+        {
+            prodName = prodName.ToUpper();
+            var regexMatch = Regex.Match(prodName, @"(?<Result>\d+)PK");
+            var prodPack = regexMatch.Groups["Result"].Value;
+            if (prodPack.Length > 0)
+            {
+                int outVal = 0;
+                int.TryParse(prodPack.Replace("$", ""), out outVal);
+                return outVal;
+            }
+            return 1;
+        }
+        public string getVolume(string prodName)
+        {
+            prodName = prodName.ToUpper();
+            var regexMatch = Regex.Match(prodName, @"(?<Result>\d+)ML| (?<Result>\d+)LTR| (?<Result>\d+)OZ | (?<Result>\d+)L|(?<Result>\d+)\sOZ");
+            var prodPack = regexMatch.Groups["Result"].Value;
+            if (prodPack.Length > 0)
+            {
+                return regexMatch.ToString();
+            }
+            return "";
         }
     }
 }

@@ -53,11 +53,13 @@
   <ItemGroup>
     <Compile Include="clsEmail.cs" />
     <Compile Include="clsKorona.cs" />
+    <Compile Include="clsKorona2.cs" />
     <Compile Include="Model\GenerateCSVFile.cs" />
     <Compile Include="Model\KoronaModel.cs" />
     <Compile Include="Model\ResponseModel.cs" />
     <Compile Include="Model\StockResponseModel.cs" />
     <Compile Include="Model\StoreSettings.cs" />
+    <Compile Include="Model\TaxResponseModel.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
