@@ -4,7 +4,7 @@ using System.Configuration;
 
 namespace Korona
 {
-    // pushing to git on date 31/10/2025
+    // pushing to git on date 31/10/2025 and from github ui too
     class Program
     {
         static void Main(string[] args)
