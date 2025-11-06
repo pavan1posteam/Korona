@@ -7,7 +7,7 @@ namespace Korona
     // pushing to git on date 31/10/2025 and from github ui too
     class Program
     {
-        static void Main(string[] args)
+        static void Main(string[] args)//Testing by jacob
         {
             string KoronaApiUrl = ConfigurationManager.AppSettings["KoronaApiUrl"];
             string KoronaBaseUrl = ConfigurationManager.AppSettings["KoronaBaseUrl"];
