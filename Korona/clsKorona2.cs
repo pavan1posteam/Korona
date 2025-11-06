@@ -15,7 +15,7 @@ using System.Threading.Tasks;
 
 namespace Korona
 {
-    class clsKorona2//testing by jacob on 06/11 again by PK
+    class clsKorona2//testing by jacob on 06/11 again by PK again jk
     {
         string baseUrl = ConfigurationManager.AppSettings["KoronaBaseUrl"];
         string apiUrl = ConfigurationManager.AppSettings["KoronaApiUrl"];

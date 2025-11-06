@@ -24,14 +24,14 @@ namespace Korona
                 {
                     try
                     {
-                        //if (itm.StoreSettings.StoreId == 10002)
-                        //{
+                        if (itm.StoreSettings.StoreId == 12383)
+                        {
 
-                        //}
-                        //else
-                        //{
-                        //    continue;
-                        //}
+                        }
+                        else
+                        {
+                            continue;
+                        }
                         if (string.IsNullOrEmpty(itm.StoreSettings.POSSettings.BaseUrl))
                         {
                             if (diiffer_Url.Contains(itm.StoreSettings.StoreId.ToString()))
