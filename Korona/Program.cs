@@ -24,7 +24,7 @@ namespace Korona
                 {
                     try
                     {
-                        /*if (itm.StoreSettings.StoreId == 12446)
+                        /*if (itm.StoreSettings.StoreId == 10010)
                         {
                             Console.WriteLine("fetching_storeid "+ itm.StoreSettings.StoreId);
                         }
