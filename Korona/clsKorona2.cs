@@ -257,7 +257,7 @@ namespace Korona
             }
         }
         public void KoronaProductDetails(string tax, string StorePriceGroupId, int StoreId)
-        {
+         {
             try
             {
                 finalResultList = new List<FinalResult>();
@@ -789,6 +789,7 @@ namespace Korona
             {
                 foreach (var dataitem in item.results)
                 {
+                    
                     var amount = dataitem.amount;
                     var product = dataitem.product;
                     if (amount.actual > 9999)
@@ -797,7 +798,8 @@ namespace Korona
                     }
                     foreach (var Litem in finalResultList)
                     {
-                        if (Nonstocklistqty.Contains(StoreId.ToString())) // For Store 11404 tktno:15856
+                        
+                        if (Nonstocklistqty.Contains(StoreId.ToString())) // For Store 11404 tktno:15856 nd 12929 
                         {
                             Litem.qty = 999;
                         }
@@ -809,7 +811,8 @@ namespace Korona
                             }
                             else if (staticqty.Contains(StoreId.ToString()))  //tckt8895
                             {
-                                Litem.qty = Convert.ToInt32(amount.actual);
+                               
+                                  Litem.qty = Convert.ToInt32(amount.actual);
                             }
                             else
                             {
