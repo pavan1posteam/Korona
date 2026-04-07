@@ -67,7 +67,7 @@ namespace Korona
         string pathStock = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), @"KoronaProductStock.json");
         string PathProductTax = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), @"ProductTax.json");
 
-        public clsKorona2(int _storeid, string _BaseUrl, string _MerchantId, string _ApiKey,string _StorePriceGroupId, string _OrganisationalId, string _tax, decimal _deposit)
+        public clsKorona2(int _storeid, string _BaseUrl, string _MerchantId, string _ApiKey, string _StorePriceGroupId, string _OrganisationalId, string _tax, decimal _deposit)
         {
             StoreId = _storeid;
             BaseUrl = _BaseUrl;
@@ -139,7 +139,7 @@ namespace Korona
                 {
                     if (item.Name.ToString().ToUpper() != "PREVIOUS" && item.Name.ToString().ToUpper() != "SELF")
                     {
-                        CreateKoronaProductResponseFile(BaseUrl , ApiKey, item.Value.ToString());
+                        CreateKoronaProductResponseFile(BaseUrl, ApiKey, item.Value.ToString());
                     }
                     break;
                 }
@@ -257,7 +257,7 @@ namespace Korona
             }
         }
         public void KoronaProductDetails(string tax, string StorePriceGroupId, int StoreId)
-         {
+        {
             try
             {
                 finalResultList = new List<FinalResult>();
@@ -275,9 +275,9 @@ namespace Korona
                         {
                             upc = dataitem.number;
                         }
-                        else if(AppendArticleUPCs.Contains(StoreId.ToString()))
+                        else if (AppendArticleUPCs.Contains(StoreId.ToString()))
                         {
-                            upc = dataitem.codes == null ? dataitem.number == null ? "": "99"+StoreId+dataitem.number : dataitem.codes.FirstOrDefault().productCode;
+                            upc = dataitem.codes == null ? dataitem.number == null ? "" : "99" + StoreId + dataitem.number : dataitem.codes.FirstOrDefault().productCode;
                         }
                         else
                         {
@@ -295,7 +295,7 @@ namespace Korona
                         {
                             finalResult.upc = "#" + upc.ToString().Trim();
                             fullname.upc = finalResult.upc;
-                            if(!string.IsNullOrEmpty(dataitem.number))
+                            if (!string.IsNullOrEmpty(dataitem.number))
                             {
                                 finalResult.sku = "#" + dataitem.number.Trim();
                                 fullname.sku = "#" + dataitem.number.Trim();
@@ -430,7 +430,7 @@ namespace Korona
                             }
                         }
 
-                        
+
                         fullname.pcat1 = "";
                         fullname.pcat2 = "";
                         finalResult.pack = getpack(finalResult.StoreProductName);
@@ -789,7 +789,7 @@ namespace Korona
             {
                 foreach (var dataitem in item.results)
                 {
-                    
+
                     var amount = dataitem.amount;
                     var product = dataitem.product;
                     if (amount.actual > 9999)
@@ -798,7 +798,7 @@ namespace Korona
                     }
                     foreach (var Litem in finalResultList)
                     {
-                        
+
                         if (Nonstocklistqty.Contains(StoreId.ToString())) // For Store 11404 tktno:15856 nd 12929 
                         {
                             Litem.qty = 999;
@@ -811,8 +811,8 @@ namespace Korona
                             }
                             else if (staticqty.Contains(StoreId.ToString()))  //tckt8895
                             {
-                               
-                                  Litem.qty = Convert.ToInt32(amount.actual);
+
+                                Litem.qty = Convert.ToInt32(amount.actual);
                             }
                             else
                             {
@@ -837,16 +837,36 @@ namespace Korona
             }
             return 1;
         }
+        #region old get volume method
+        //public string getVolume(string prodName)
+        //{
+        //    prodName = prodName.ToUpper();
+        //    var regexMatch = Regex.Match(prodName, @"(?<Result>\d+)ML| (?<Result>\d+)LTR| (?<Result>\d+)OZ | (?<Result>\d+)L|(?<Result>\d+)\sOZ");
+        //    var prodPack = regexMatch.Groups["Result"].Value;
+        //    if (prodPack.Length > 0)
+        //    {
+        //        return regexMatch.ToString();
+        //    }
+        //    return "";
+        //}
+        #endregion
+
+        #region new getvolume method as per ticket #50353
         public string getVolume(string prodName)
         {
             prodName = prodName.ToUpper();
-            var regexMatch = Regex.Match(prodName, @"(?<Result>\d+)ML| (?<Result>\d+)LTR| (?<Result>\d+)OZ | (?<Result>\d+)L|(?<Result>\d+)\sOZ");
-            var prodPack = regexMatch.Groups["Result"].Value;
-            if (prodPack.Length > 0)
+
+            var match = Regex.Match(prodName,
+                @"\d+(\.\d+)?\s?(ML|L|LTR|FL OZ|OZ)",
+                RegexOptions.IgnoreCase);
+
+            if (match.Success)
             {
-                return regexMatch.ToString();
+                return match.Value;
             }
+
             return "";
         }
+        #endregion
     }
 }

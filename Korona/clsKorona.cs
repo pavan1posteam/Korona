@@ -755,17 +755,37 @@ namespace Korona
             }
             return 1;
         }
+        #region old getvolume method
+        //public string getVolume(string prodName)
+        //{
+        //    prodName = prodName.ToUpper();
+        //    var regexMatch = Regex.Match(prodName, @"(?<Result>\d+)ML| (?<Result>\d+)LTR| (?<Result>\d+)OZ | (?<Result>\d+)L|(?<Result>\d+)\sOZ");
+        //    var prodPack = regexMatch.Groups["Result"].Value;
+        //    if (prodPack.Length > 0)
+        //    {
+        //        return regexMatch.ToString();
+        //    }
+        //    return "";
+        //}
+        #endregion
+
+        #region new getvolume method as per ticket #50353
         public string getVolume(string prodName)
         {
             prodName = prodName.ToUpper();
-            var regexMatch = Regex.Match(prodName, @"(?<Result>\d+)ML| (?<Result>\d+)LTR| (?<Result>\d+)OZ | (?<Result>\d+)L|(?<Result>\d+)\sOZ");
-            var prodPack = regexMatch.Groups["Result"].Value;
-            if (prodPack.Length > 0)
+
+            var match = Regex.Match(prodName,
+                @"\d+(\.\d+)?\s?(ML|L|LTR|FL OZ|OZ)",
+                RegexOptions.IgnoreCase);
+
+            if (match.Success)
             {
-                return regexMatch.ToString();
+                return match.Value;
             }
+
             return "";
         }
+        #endregion
         private void KoronaStockList(int StoreId)
         {
             foreach (var item in stkModel)
