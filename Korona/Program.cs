@@ -24,14 +24,19 @@ namespace Korona
                 {
                     try
                     {
-                       //if (itm.StoreSettings.StoreId == 13125 || itm.StoreSettings.StoreId == 13126)
-                       // {
-                       //     Console.WriteLine("fetching_storeid " + itm.StoreSettings.StoreId);
-                       // }
-                       // else
-                       // {
-                       //     continue;
-                       // }
+
+                 /* uncomment above string constr  before sending live in StoreSettings.cs
+                  * comment string constr = dbConnection;   because in live db keys will fetch from Appconfig only 
+                  * comment below store condition also before sending live  
+                  */ 
+                        //if (itm.StoreSettings.StoreId == 13070 )
+                        //{
+                        //    Console.WriteLine("fetching_storeid " + itm.StoreSettings.StoreId);
+                        //}
+                        //else
+                        //{
+                        //    continue;
+                        //}
                         if (string.IsNullOrEmpty(itm.StoreSettings.POSSettings.BaseUrl))
                         {
                             if (diiffer_Url.Contains(itm.StoreSettings.StoreId.ToString()))
