@@ -25,19 +25,19 @@ namespace Korona.Model
                 sparams.Add(new SqlParameter("@PosId", 8));
 
 
-               string constr = ConfigurationManager.AppSettings.Get("LiquorAppsConnectionString");
+             //  string constr = ConfigurationManager.AppSettings.Get("LiquorAppsConnectionString");
 
                 string filepath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "dbsettings.json");
                 DbSettings dbcon = JsonConvert.DeserializeObject<DbSettings>(File.ReadAllText(filepath));
-                string dbConnection = dbcon.liquorappsconnectionstring[0];  // [0] is for local DB & [1] is for Live DB
+                string dbConnection = dbcon.liquorappsconnectionstring[1];  // [0] is for local DB & [1] is for Live DB
 
-                //  string liveDBCon = dbcon.liquorappsconnectionstring[1];  //Donot use this (this is for testing ) , use only above line by changing [0] or [1]
+                // string liveDBCon = dbcon.liquorappsconnectionstring[1];  //Donot use this (this is for testing ) , use only above line by changing [0] or [1]
 
                 /*  uncomment above string constr  before sending live 
                  *  comment string constr = dbConnection;   because in live db keys will fetch from Appconfig only 
                  */
 
-                //   string constr = dbConnection;
+                  string constr = dbConnection;
 
                 using (SqlConnection con = new SqlConnection(constr))
                 {
