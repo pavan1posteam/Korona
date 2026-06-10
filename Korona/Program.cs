@@ -29,7 +29,7 @@ namespace Korona
                          * comment string constr = dbConnection;   because in live db keys will fetch from Appconfig only 
                          * comment below store condition also before sending live  
                          */
-                        //if (itm.StoreSettings.StoreId == 13070)
+                        //if ( itm.StoreSettings.StoreId == 13172)
                         //{
                         //    Console.WriteLine("fetching_storeid " + itm.StoreSettings.StoreId);
                         //}
