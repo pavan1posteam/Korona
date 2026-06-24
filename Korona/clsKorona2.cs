@@ -3,6 +3,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using RestSharp;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Configuration;
 using System.IO;
@@ -44,6 +45,7 @@ namespace Korona
         string Includedeposit = ConfigurationManager.AppSettings["Includedeposit"];
         string Beerdeposit = ConfigurationManager.AppSettings["Beerdeposit"];
         string AppendArticleUPCs = ConfigurationManager.AppSettings["AppendArticleUPCs"];
+        string spricepromo = ConfigurationManager.AppSettings ["spricepromo"];
 
         public int StoreId;
         public string BaseUrl;
@@ -63,6 +65,8 @@ namespace Korona
         List<QuantityPrice> PriceResult = new List<QuantityPrice>();
         List<codes> CodeResult = new List<codes>();
 
+        List<PromotionResponseModel> promotionModel = new List<PromotionResponseModel>();
+
         string pathProduct = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), @"ProductDetails_Korona.json");
         string pathStock = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), @"KoronaProductStock.json");
         string PathProductTax = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), @"ProductTax.json");
@@ -81,9 +85,13 @@ namespace Korona
         }
         public void Start()
         {
-            DeleteProductPath();
+            DeleteTempFiles();
+             DeleteProductPath();
             CreateKoronaProductResponseFile(BaseUrl, ApiKey);
             setupenv();
+
+            getPromotion(BaseUrl, ApiKey);
+
             CreateKoronaStockResponseFile(BaseUrl, ApiKey);
             if (BaseUrl.Contains("185"))
             {
@@ -100,6 +108,21 @@ namespace Korona
                 File.Delete(pathProduct);
             }
         }
+        public void DeleteTempFiles()
+        {
+            string[] files = { $"{StoreId}_Products.json",       
+                                $"{StoreId}_Stock.json",
+                                $"{StoreId}_Tax.json",
+                                $"{StoreId}_Promotions.json"
+                            };
+                foreach (string file in files)
+                {
+                    if (File.Exists(file))
+                    {
+                        File.Delete(file);
+                    }
+                }
+        }
         public string getProduct(string BaseUrl, string ApiKey, string value = "", bool first = false)
         {
             ResponseModel mdl = new ResponseModel();
@@ -115,7 +138,7 @@ namespace Korona
             string content = response.Content;
             mdl = JsonConvert.DeserializeObject<ResponseModel>(content);
             resmdl.Add(mdl);
-            //File.AppendAllText("12383.json", content);
+           File.AppendAllText( $"{StoreId}_Products.json", content);//comment later
             return content;
         }
         public void CreateKoronaProductResponseFile(string BaseUrl, string ApiKey, string value = "")
@@ -172,7 +195,7 @@ namespace Korona
                 stk = JsonConvert.DeserializeObject<StockResponseModel>(content);
                 stkModel.Add(stk);
             }
-            //File.AppendAllText("12383Stock.json", content);
+           File.AppendAllText($"{StoreId}_Stock.json", content); //comment later
             return content;
 
         }
@@ -256,18 +279,65 @@ namespace Korona
                 }
             }
         }
+
+
+        // to get promotions for sale price 
+        public string getPromotion(string BaseUrl, string ApiKey)
+        {
+            Console.WriteLine("getPromotion ");
+            PromotionResponseModel promotion = new PromotionResponseModel();
+
+            string value = "/web/api/v3/accounts/" + MerchantId + "/promotions";
+
+            var client = new RestClient(BaseUrl + value);
+
+            var request = new RestRequest(Method.GET);
+
+            request.AddHeader("Authorization", "Basic " + ApiKey);
+            request.AddHeader("accept", "application/json");
+
+            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
+
+            IRestResponse response = client.Execute(request);
+
+            string content = "";
+
+            if (response.StatusCode == HttpStatusCode.OK)
+            {
+                content = response.Content;
+
+                promotion = JsonConvert.DeserializeObject<PromotionResponseModel>(content);
+
+                promotionModel.Add(promotion);
+            }
+
+            File.AppendAllText($"{StoreId}_Promotions.json", content); //comment later
+
+            return content;
+        }
         public void KoronaProductDetails(string tax, string StorePriceGroupId, int StoreId)
         {
             try
             {
                 finalResultList = new List<FinalResult>();
                 fullnameList = new List<Fullname>();
+                Console.WriteLine("resmdl Count = " + resmdl.Count);
+                int totalProducts = 0;
+                foreach (var item in resmdl)
+                {
+                    totalProducts += item.results.Count;
+                }
+                Console.WriteLine("Total Products = " + totalProducts);
+
+
+
 
                 foreach (var item in resmdl)
                 {
                     var data = item.results;
                     foreach (var dataitem in data)
                     {
+                       
                         var finalResult = new FinalResult();
                         var fullname = new Fullname();
                         var upc = "";
@@ -337,10 +407,12 @@ namespace Korona
                                 continue;
                             }
                         }
+
                         //if (Regex.IsMatch(fullname.sku, @"[A-Z]|[a-z]"))
                         //    continue;
                         //if (Regex.IsMatch(upc,@"[A-Z]|[a-z]"))
                         //    continue;
+
                         finalResult.Productid = dataitem.id;
                         finalResult.StoreDescription = dataitem.name;
                         finalResult.StoreProductName = dataitem.name;
@@ -718,12 +790,76 @@ namespace Korona
                                                         }
                                                     }
                                                 }
+
+
+
+
                                             }
                                         }
+                                    }
+
+
+
+                                }
+                            }
+                        }
+
+                       //discount prices from promotion end point and minus them from regualr price to get Sprice
+                        try
+                        {
+                            if (spricepromo.Contains(StoreId.ToString()))
+                            {
+                                if (dataitem.tag != null && dataitem.tag.Count > 0 && !string.IsNullOrEmpty(dataitem.tag[0]?.id))
+                                {
+                                    string productTagId = dataitem.tag[0].id;
+                                    bool matched = false;
+
+                                    // regular price from PriceResult (already built above this block)
+                                    decimal regularPrice = 0;
+                                    if (PriceResult.Count > 0)
+                                    {
+                                        var maxValidFrom = PriceResult.Max(a => a.validFrom);
+                                        var currentPriceEntries = PriceResult.Where(a => a.validFrom == maxValidFrom).ToList();
+                                        regularPrice = (decimal) currentPriceEntries[0].value;
+                                    }
+
+                                    foreach (var promotionPage in promotionModel)
+                                    {
+                                        if (promotionPage?.results == null) continue;
+
+                                        foreach (var promotion in promotionPage.results)
+                                        {
+                                            var targetTagId = promotion?.benefit?.common?.targetTag?.id;
+                                            if (string.IsNullOrEmpty(targetTagId)) continue;
+                                            if (targetTagId != productTagId) continue;
+
+                                            var discountValue = promotion?.benefit?.common?.value;
+                                            if (discountValue == null) continue;
+
+                                            decimal discountedPrice = regularPrice - discountValue.Value;
+                                            if (discountedPrice < 0) discountedPrice = 0;
+
+                                            finalResult.sprice = discountedPrice.ToString();
+                                           
+                                            finalResult.start = DateTime.Now.ToString("MM/dd/yyyy");
+                                            finalResult.end = DateTime.Now.AddDays(1).ToString("MM/dd/yyyy");
+
+                                            matched = true;
+                                            break;
+                                        }
+
+                                        if (matched) break;
                                     }
                                 }
                             }
                         }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"sprice/promo block error for product {dataitem?.id} ({dataitem?.name}): {ex.Message}");
+                        }
+
+
+
                         if (PriceResult.Count > 0)
                         {
                             var MaxvalidFrom = PriceResult.Max(a => a.validFrom);

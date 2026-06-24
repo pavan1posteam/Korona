@@ -1,4 +1,5 @@
 ﻿// Root myDeserializedClass = JsonConvert.DeserializeObject<Root>(myJsonResponse);
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 
@@ -97,7 +98,9 @@ public class Result
     public bool independentSubarticleDiscounts { get; set; }
     public bool stockReturnUnsellable { get; set; }
     public List<Subproduct> subproducts { get; set; }
-    public List<Tag> tag { get; set; }
+
+    [JsonProperty("tags")]
+    public List<Tag> tag { get; set; }    // added [JsonProperty("tags")]  on 6-24-26 as per API response  to handle promotion API mapping by nithin
     public AlternativeSector alternativeSector { get; set; }
     public List<Container> containers { get; set; }
 }

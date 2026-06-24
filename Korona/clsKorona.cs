@@ -50,11 +50,13 @@ namespace Korona
         string AllowCBD = ConfigurationManager.AppSettings["AllowCBD"];
         string IncludeContainers = ConfigurationManager.AppSettings["IncludeContainers"];
         string AppendArticleUPCs = ConfigurationManager.AppSettings["AppendArticleUPCs"];
-
-
+        string spricepromo = ConfigurationManager.AppSettings["spricepromo"];
+        
+     
         List<ResponseModel> resmdl = new List<ResponseModel>();
         List<StockResponseModel> stkModel = new List<StockResponseModel>();
         List<TaxResponseModel.Root> taxModel = new List<TaxResponseModel.Root>();
+      
 
         string pathProduct = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), @"ProductDetails_Korona.json");
         string pathStock = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), @"KoronaProductStock.json");
@@ -81,7 +83,7 @@ namespace Korona
                 File.Delete(pathProduct);
             }
         }
-
+    
         public void DeleteTaxPath()
         {
             if (File.Exists(PathProductTax))
@@ -217,7 +219,7 @@ namespace Korona
                 }
             }
         }
-
+     
         public void KoronaProductDetails(string tax, string StorePriceGroupId, int StoreId)
         {
             try

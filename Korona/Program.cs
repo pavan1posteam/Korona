@@ -7,7 +7,7 @@ namespace Korona
     // pushing to git on date 31/10/2025 and from github ui too
     class Program
     {
-        static void Main(string[] args)//Testing by jacob
+        static void Main(string[] args)
         {
             string KoronaApiUrl = ConfigurationManager.AppSettings["KoronaApiUrl"];
             string KoronaBaseUrl = ConfigurationManager.AppSettings["KoronaBaseUrl"];
@@ -25,11 +25,7 @@ namespace Korona
                     try
                     {
 
-                        /* uncomment above string constr  before sending live in StoreSettings.cs
-                         * comment string constr = dbConnection;   because in live db keys will fetch from Appconfig only 
-                         * comment below store condition also before sending live  
-                         */
-                        //if ( itm.StoreSettings.StoreId == 13172)
+                        //if (itm.StoreSettings.StoreId == 12929)
                         //{
                         //    Console.WriteLine("fetching_storeid " + itm.StoreSettings.StoreId);
                         //}
@@ -37,6 +33,7 @@ namespace Korona
                         //{
                         //    continue;
                         //}
+
                         if (string.IsNullOrEmpty(itm.StoreSettings.POSSettings.BaseUrl))
                         {
                             if (diiffer_Url.Contains(itm.StoreSettings.StoreId.ToString()))

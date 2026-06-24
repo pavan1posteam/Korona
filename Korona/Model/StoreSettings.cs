@@ -25,20 +25,37 @@ namespace Korona.Model
                 sparams.Add(new SqlParameter("@PosId", 8));
 
 
-               string constr = ConfigurationManager.AppSettings.Get("LiquorAppsConnectionString");
+                 //Handling missing dbsettings.json File 
+               string constr = ConfigurationManager.AppSettings["LiquorAppsConnectionString"];
+                Console.WriteLine("constr-from-Appconfig " + constr);
+                // If App.config doesn't have the connection string, use dbsettings.json
+                if (string.IsNullOrWhiteSpace(constr))
+                {
+                    string filePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "dbsettings.json");
 
-                string filepath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "dbsettings.json");
-                DbSettings dbcon = JsonConvert.DeserializeObject<DbSettings>(File.ReadAllText(filepath));
-                string dbConnection = dbcon.liquorappsconnectionstring[1];  // [0] is for local DB & [1] is for Live DB
+                    if (File.Exists(filePath))
+                    {
+                        try
+                        {
+                            DbSettings dbcon = JsonConvert.DeserializeObject<DbSettings>(
+                                File.ReadAllText(filePath));
 
-             
+                            if (dbcon?.liquorappsconnectionstring != null &&
+                                dbcon.liquorappsconnectionstring.Count > 0)
+                            {
+                                // Local connection string
+                                constr = dbcon.liquorappsconnectionstring[1]; // [0] is for local & [1] for live db 
+                                Console.WriteLine("constr-2 " + constr);
+                            }
+                        }
+                        catch
+                        {
+                            // Ignore and handle if constr is still null
+                        }
+                    }
 
-                /*  uncomment above string constr  before sending live 
-                 *  comment string constr = dbConnection;   because in live db keys will fetch from Appconfig only 
-                 */
-
-                //   string constr = dbConnection;
-
+                }
+                
                 using (SqlConnection con = new SqlConnection(constr))
                 {
                     using (SqlCommand cmd = new SqlCommand())
