@@ -105,7 +105,8 @@ namespace Korona
             string content = response.Content;
             mdl = JsonConvert.DeserializeObject<ResponseModel>(content);
             resmdl.Add(mdl);
-            //File.AppendAllText("12405.json", content);
+            //
+            //("12405.json", content);
 
             return content;
 

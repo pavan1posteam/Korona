@@ -25,14 +25,14 @@ namespace Korona
                     try
                     {
 
-                        //if (itm.StoreSettings.StoreId == 12850)
-                        //{
-                        //    Console.WriteLine("fetching_storeid " + itm.StoreSettings.StoreId);
-                        //}
-                        //else
-                        //{
-                        //    continue;
-                        //}
+                        if (itm.StoreSettings.StoreId == 12929)
+                        {
+                            Console.WriteLine("fetching_storeid " + itm.StoreSettings.StoreId);
+                        }
+                        else
+                        {
+                            continue;
+                        }
 
                         if (string.IsNullOrEmpty(itm.StoreSettings.POSSettings.BaseUrl))
                         {

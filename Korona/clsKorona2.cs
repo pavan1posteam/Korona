@@ -89,9 +89,10 @@ namespace Korona
              DeleteProductPath();
             CreateKoronaProductResponseFile(BaseUrl, ApiKey);
             setupenv();
-
-            getPromotion(BaseUrl, ApiKey);
-
+            if (spricepromo.Contains(StoreId.ToString())) 
+            {
+                getPromotion(BaseUrl, ApiKey);
+            }
             CreateKoronaStockResponseFile(BaseUrl, ApiKey);
             if (BaseUrl.Contains("185"))
             {
@@ -138,7 +139,7 @@ namespace Korona
             string content = response.Content;
             mdl = JsonConvert.DeserializeObject<ResponseModel>(content);
             resmdl.Add(mdl);
-           File.AppendAllText( $"{StoreId}_Products.json", content);//comment later
+        //   File.AppendAllText( $"{StoreId}_Products.json", content);//comment later
             return content;
         }
         public void CreateKoronaProductResponseFile(string BaseUrl, string ApiKey, string value = "")
@@ -195,7 +196,7 @@ namespace Korona
                 stk = JsonConvert.DeserializeObject<StockResponseModel>(content);
                 stkModel.Add(stk);
             }
-           File.AppendAllText($"{StoreId}_Stock.json", content); //comment later
+          //  File.AppendAllText($"{StoreId}_Stock.json", content); //comment later
             return content;
 
         }
@@ -311,7 +312,7 @@ namespace Korona
                 promotionModel.Add(promotion);
             }
 
-            File.AppendAllText($"{StoreId}_Promotions.json", content); //comment later
+          File.AppendAllText($"{StoreId}_Promotions.json", content); //comment later
 
             return content;
         }
