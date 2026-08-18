@@ -536,8 +536,8 @@ namespace Korona
                                 if (tags != null)
                                 {
 
-                                    var pgx = Newtonsoft.Json.JsonConvert.DeserializeObject<List<Tag>>(tags.ToString());
-                                    foreach (var tagitem in pgx)
+                                    //var pgx = Newtonsoft.Json.JsonConvert.DeserializeObject<List<Tag>>(tags);
+                                    foreach (var tagitem in tags)
                                     {
                                         xuom = tagitem.name;
                                         if (Regex.IsMatch(xuom.ToUpper(), @"\dML$|\d\s+ML$|KEG$|\dL$|\d\s+L$|\dOZ$|\d\s+OZ$"))
