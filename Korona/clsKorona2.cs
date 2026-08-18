@@ -136,6 +136,13 @@ namespace Korona
             request.AddHeader("content-type", "application/x-www-form-urlencoded");
             ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
             IRestResponse response = client.Execute(request);
+
+            if (response.StatusCode != HttpStatusCode.OK)
+            {
+                throw new Exception("Korona API failed. Status: " + response.StatusCode + ", Response: " + response.Content);
+
+            }
+
             string content = response.Content;
             mdl = JsonConvert.DeserializeObject<ResponseModel>(content);
             resmdl.Add(mdl);
@@ -312,7 +319,7 @@ namespace Korona
                 promotionModel.Add(promotion);
             }
 
-          File.AppendAllText($"{StoreId}_Promotions.json", content); //comment later
+      //    File.AppendAllText($"{StoreId}_Promotions.json", content); //comment later
 
             return content;
         }
@@ -331,151 +338,155 @@ namespace Korona
                 Console.WriteLine("Total Products = " + totalProducts);
 
 
-
-
                 foreach (var item in resmdl)
                 {
                     var data = item.results;
                     foreach (var dataitem in data)
                     {
-                       
-                        var finalResult = new FinalResult();
-                        var fullname = new Fullname();
-                        var upc = "";
-                        if (codeupc.Contains(StoreId.ToString()))
+                        try
                         {
-                            upc = dataitem.number;
-                        }
-                        else if (AppendArticleUPCs.Contains(StoreId.ToString()))
-                        {
-                            upc = dataitem.codes == null ? dataitem.number == null ? "" : "99" + StoreId + dataitem.number : dataitem.codes.FirstOrDefault().productCode;
-                        }
-                        else
-                        {
-                            upc = dataitem.codes == null ? "" : dataitem.codes.FirstOrDefault().productCode;
-                        }
-                        finalResult.storeid = StoreId;
-                        if (skunull.Contains(StoreId.ToString()) && !string.IsNullOrEmpty(upc))
-                        {
-                            finalResult.upc = "#" + upc.ToString().Trim();
-                            fullname.upc = finalResult.upc;
-                            finalResult.sku = finalResult.upc;
-                            fullname.sku = finalResult.upc;
-                        }
-                        else if (AppendArticleUPCs.Contains(StoreId.ToString()) && !string.IsNullOrEmpty(upc))
-                        {
-                            finalResult.upc = "#" + upc.ToString().Trim();
-                            fullname.upc = finalResult.upc;
-                            if (!string.IsNullOrEmpty(dataitem.number))
+                            var finalResult = new FinalResult();
+                            var fullname = new Fullname();
+                            var upc = "";
+                            if (codeupc.Contains(StoreId.ToString()))
                             {
+                                upc = dataitem.number;
+                            }
+                            else if (AppendArticleUPCs.Contains(StoreId.ToString()))
+                            {
+                                upc = dataitem.codes == null ? dataitem.number == null ? "" : "99" + StoreId + dataitem.number : dataitem.codes.FirstOrDefault().productCode;
+                            }
+                            else
+                            {
+                                upc = dataitem.codes == null ? "" : dataitem.codes.FirstOrDefault().productCode;
+                            }
+                            finalResult.storeid = StoreId;
+                            if (skunull.Contains(StoreId.ToString()) && !string.IsNullOrEmpty(upc))
+                            {
+                                finalResult.upc = "#" + upc.ToString().Trim();
+                                fullname.upc = finalResult.upc;
+                                finalResult.sku = finalResult.upc;
+                                fullname.sku = finalResult.upc;
+                            }
+                            else if (AppendArticleUPCs.Contains(StoreId.ToString()) && !string.IsNullOrEmpty(upc))
+                            {
+                                finalResult.upc = "#" + upc.ToString().Trim();
+                                fullname.upc = finalResult.upc;
+                                if (!string.IsNullOrEmpty(dataitem.number))
+                                {
+                                    finalResult.sku = "#" + dataitem.number.Trim();
+                                    fullname.sku = "#" + dataitem.number.Trim();
+                                }
+                                else
+                                {
+                                    finalResult.sku = finalResult.upc;
+                                    fullname.sku = finalResult.upc;
+                                }
+                            }
+                            else if (upcnull.Contains(StoreId.ToString()))
+                            {
+                                finalResult.upc = "#" + dataitem.number.Trim();
+                                fullname.upc = finalResult.upc;
+                                finalResult.sku = finalResult.upc;
+                                fullname.sku = finalResult.upc;
+                            }
+                            else if (!string.IsNullOrEmpty(upc) && !string.IsNullOrEmpty(dataitem.number))
+                            {
+                                finalResult.upc = "#" + upc.ToString().Trim();
+                                fullname.upc = "#" + upc.ToString().Trim();
                                 finalResult.sku = "#" + dataitem.number.Trim();
                                 fullname.sku = "#" + dataitem.number.Trim();
                             }
                             else
                             {
-                                finalResult.sku = finalResult.upc;
-                                fullname.sku = finalResult.upc;
-                            }
-                        }
-                        else if (upcnull.Contains(StoreId.ToString()))
-                        {
-                            finalResult.upc = "#" + dataitem.number.Trim();
-                            fullname.upc = finalResult.upc;
-                            finalResult.sku = finalResult.upc;
-                            fullname.sku = finalResult.upc;
-                        }
-                        else if (!string.IsNullOrEmpty(upc) && !string.IsNullOrEmpty(dataitem.number))
-                        {
-                            finalResult.upc = "#" + upc.ToString().Trim();
-                            fullname.upc = "#" + upc.ToString().Trim();
-                            finalResult.sku = "#" + dataitem.number.Trim();
-                            fullname.sku = "#" + dataitem.number.Trim();
-                        }
-                        else
-                        {
-                            continue;
-                        }
-
-                        if (different_sku.Contains(StoreId.ToString()))
-                        {
-                            if (!string.IsNullOrEmpty(upc))
-                            {
-                                fullname.sku = "#" + upc.ToString().Trim();
-                                finalResult.sku = "#" + upc.ToString().Trim();
-                            }
-                            else
-                            {
                                 continue;
                             }
-                        }
 
-                        //if (Regex.IsMatch(fullname.sku, @"[A-Z]|[a-z]"))
-                        //    continue;
-                        //if (Regex.IsMatch(upc,@"[A-Z]|[a-z]"))
-                        //    continue;
-
-                        finalResult.Productid = dataitem.id;
-                        finalResult.StoreDescription = dataitem.name;
-                        finalResult.StoreProductName = dataitem.name;
-                        fullname.pdesc = dataitem.name;
-                        fullname.pname = dataitem.name;
-                        var cmgp = dataitem.commodityGroup;
-                        if (cmgp != null)
-                        {
-                            if (!Regex.IsMatch(cmgp.name, @"\d+"))
-                                fullname.pcat = cmgp.name;
-                            else
-                                fullname.pcat = "";
-                        }
-                        if (tax_rate.Contains(StoreId.ToString()))
-                        {
-                            var taxes = dataitem.sector;
-                            double taxe;
-                            var taxrate = "";
-                            if (taxes != null)
+                            if (different_sku.Contains(StoreId.ToString()))
                             {
-                                taxe = Convert.ToDouble(taxes.number) * 0.01;
-                                taxrate = taxe.ToString();
-                            }
-                            finalResult.tax = taxrate;
-                        }
-                        else
-                        {
-                            finalResult.tax = tax;
-                        }
-                        if (tax_category.Contains(StoreId.ToString()))
-                        {
-                            if (fullname.pcat.ToUpper() == "BEER")
-                            {
-                                finalResult.tax = Convert.ToString("0.0925");
-                            }
-                            else if (fullname.pcat.ToUpper() == "LIQUOR")
-                            {
-                                finalResult.tax = Convert.ToString("0.115");
-                            }
-                            else if (fullname.pcat.ToUpper() == "Mixers & More")
-                            {
-                                finalResult.tax = Convert.ToString("0.105");
-                            }
-                            else
-                            {
-                                finalResult.tax = Convert.ToString("0.0");
-                            }
-                        }
-
-                        if (TaxFromResp.Contains(StoreId.ToString()))
-                        {
-                            foreach (var items in taxModel)
-                            {
-                                var datas = items;
-                                foreach (var element in datas.results)
+                                if (!string.IsNullOrEmpty(upc))
                                 {
-                                    for (int i = 0; i < datas.results.Count; i++)
+                                    fullname.sku = "#" + upc.ToString().Trim();
+                                    finalResult.sku = "#" + upc.ToString().Trim();
+                                }
+                                else
+                                {
+                                    continue;
+                                }
+                            }
+
+                            //if (Regex.IsMatch(fullname.sku, @"[A-Z]|[a-z]"))
+                            //    continue;
+                            //if (Regex.IsMatch(upc,@"[A-Z]|[a-z]"))
+                            //    continue;
+
+                            finalResult.Productid = dataitem.id;
+                            finalResult.StoreDescription = dataitem.name;
+                            finalResult.StoreProductName = dataitem.name;
+                            fullname.pdesc = dataitem.name;
+                            fullname.pname = dataitem.name;
+                            var cmgp = dataitem.commodityGroup;
+                            if (cmgp != null)
+                            {
+                                if (!Regex.IsMatch(cmgp.name, @"\d+"))
+                                    fullname.pcat = cmgp.name;
+                                else
+                                    fullname.pcat = "";
+                            }
+                            if (tax_rate.Contains(StoreId.ToString()))
+                            {
+                                var taxes = dataitem.sector;
+                                double taxe;
+                                var taxrate = "";
+                                if (taxes != null)
+                                {
+                                    taxe = Convert.ToDouble(taxes.number) * 0.01;
+                                    taxrate = taxe.ToString();
+                                }
+                                finalResult.tax = taxrate;
+                            }
+                            else
+                            {
+                                finalResult.tax = tax;
+                            }
+                            if (tax_category.Contains(StoreId.ToString()))
+                            {
+                                if (fullname.pcat.ToUpper() == "BEER")
+                                {
+                                    finalResult.tax = Convert.ToString("0.0925");
+                                }
+                                else if (fullname.pcat.ToUpper() == "LIQUOR")
+                                {
+                                    finalResult.tax = Convert.ToString("0.115");
+                                }
+                                else if (fullname.pcat.ToUpper() == "Mixers & More")
+                                {
+                                    finalResult.tax = Convert.ToString("0.105");
+                                }
+                                else
+                                {
+                                    finalResult.tax = Convert.ToString("0.0");
+                                }
+                            }
+
+                            if (TaxFromResp.Contains(StoreId.ToString()))
+                            {
+                                foreach (var items in taxModel)
+                                {
+                                    var datas = items;
+                                    foreach (var element in datas.results)
                                     {
-                                        if (dataitem.sector.number == items.results[i].number)
+                                        for (int i = 0; i < datas.results.Count; i++)
                                         {
-                                            decimal a = (decimal)(items.results[i].rates[0].rate / 100);
-                                            finalResult.tax = a.ToString();
+                                            if (dataitem.sector.number == items.results[i].number)
+                                            {
+                                                decimal a = (decimal)(items.results[i].rates[0].rate / 100);
+                                                finalResult.tax = a.ToString();
+                                                break;
+                                            }
+                                        }
+                                        if (!string.IsNullOrEmpty(finalResult.tax))
+                                        {
                                             break;
                                         }
                                     }
@@ -484,145 +495,190 @@ namespace Korona
                                         break;
                                     }
                                 }
-                                if (!string.IsNullOrEmpty(finalResult.tax))
+                            }
+                            var Dep = "";
+                            var Subproducts = dataitem.subproducts;
+
+                            if (Subproducts != null && deposit.Contains(StoreId.ToString()))
+                            {
+                                var pr = new product();
+                                var pcArrayCount = Subproducts.Count;
+                                for (int k = 0; k < pcArrayCount; k++)
                                 {
-                                    break;
+                                    Dep = Subproducts[k].product.name;
                                 }
                             }
-                        }
-                        var Dep = "";
-                        var Subproducts = dataitem.subproducts;
 
-                        if (Subproducts != null && deposit.Contains(StoreId.ToString()))
-                        {
-                            var pr = new product();
-                            var pcArrayCount = Subproducts.Count;
-                            for (int k = 0; k < pcArrayCount; k++)
+
+                            fullname.pcat1 = "";
+                            fullname.pcat2 = "";
+                            finalResult.pack = getpack(finalResult.StoreProductName);
+                            fullname.pack = finalResult.pack;
+                            finalResult.uom = getVolume(finalResult.StoreProductName);
+                            fullname.uom = finalResult.uom;
+                            if (discountable.Contains(StoreId.ToString())) //discountable column as per ticket 19362
                             {
-                                Dep = Subproducts[k].product.name;
+                                var disctble = dataitem.discountable;
+                                if (disctble == true)
+                                {
+                                    finalResult.Discountable = 1.ToString();
+                                }
+                                else
+                                {
+                                    finalResult.Discountable = 0.ToString();
+                                }
                             }
-                        }
 
-
-                        fullname.pcat1 = "";
-                        fullname.pcat2 = "";
-                        finalResult.pack = getpack(finalResult.StoreProductName);
-                        fullname.pack = finalResult.pack;
-                        finalResult.uom = getVolume(finalResult.StoreProductName);
-                        fullname.uom = finalResult.uom;
-                        if (discountable.Contains(StoreId.ToString())) //discountable column as per ticket 19362
-                        {
-                            var disctble = dataitem.discountable;
-                            if (disctble == true)
+                            if (TagAsUom.Contains(StoreId.ToString()))
                             {
-                                finalResult.Discountable = 1.ToString();
+                                var tags = dataitem.tag;
+                                string xuom = "";
+                                if (tags != null)
+                                {
+
+                                    var pgx = Newtonsoft.Json.JsonConvert.DeserializeObject<List<Tag>>(tags.ToString());
+                                    foreach (var tagitem in pgx)
+                                    {
+                                        xuom = tagitem.name;
+                                        if (Regex.IsMatch(xuom.ToUpper(), @"\dML$|\d\s+ML$|KEG$|\dL$|\d\s+L$|\dOZ$|\d\s+OZ$"))
+                                        {
+                                            xuom = Regex.Match(xuom.ToUpper(), @"\d+ML$|\d+\s+ML$|\d+[.]\d+ML$|\d+[.]\d+\s+ML$|KEG$|\d+L$|\d+\s+L$|\d+OZ$|\d+\s+OZ$|\d+[.]\d+L$|\d+[.]\d+\s+L$|\d+[.]\d+OZ$|\d+[.]\d+\s+OZ$").ToString();
+                                            finalResult.uom = xuom;
+                                            fullname.uom = xuom;
+                                        }
+                                    }
+
+                                }
+                            }
+                            fullname.region = "";
+                            fullname.country = "";
+
+                            if (deposit.Contains(StoreId.ToString()))
+                            {
+                                if (!string.IsNullOrEmpty(Dep.ToString()))
+                                {
+                                    string dep = Dep.ToString().Trim();
+                                    dep = Regex.Replace(dep, "[^0-9.]", "");
+                                    finalResult.Deposit = Convert.ToDecimal(dep);
+                                }
+                                else
+                                {
+                                    finalResult.Deposit = 0;
+                                }
                             }
                             else
                             {
-                                finalResult.Discountable = 0.ToString();
+                                finalResult.Deposit = 0;
                             }
-                        }
-
-                        if (TagAsUom.Contains(StoreId.ToString()))
-                        {
-                            var tags = dataitem.tag;
-                            string xuom = "";
-                            if (tags != null)
+                            if (Includedeposit.Contains(StoreId.ToString()))
                             {
-
-                                var pgx = Newtonsoft.Json.JsonConvert.DeserializeObject<List<Tag>>(tags.ToString());
-                                foreach (var tagitem in pgx)
+                                if (finalResult.StoreProductName.ToUpper().Contains("BOTTLE"))
+                                    finalResult.Deposit = finalResult.pack * Deposit;
+                                else
+                                    finalResult.Deposit = 0;
+                            }
+                            if (Beerdeposit.Contains(StoreId.ToString()))
+                            {
+                                if (fullname.pcat.ToUpper().Contains("BEER"))
+                                    finalResult.Deposit = finalResult.pack * Deposit;
+                                else
+                                    finalResult.Deposit = 0;
+                            }
+                            if (qty.Contains(StoreId.ToString()))
+                            {
+                                if (fullname.pcat.ToUpper() == "BEER" || fullname.pcat.ToUpper() == "CRAFT BEER")
                                 {
-                                    xuom = tagitem.name;
-                                    if (Regex.IsMatch(xuom.ToUpper(), @"\dML$|\d\s+ML$|KEG$|\dL$|\d\s+L$|\dOZ$|\d\s+OZ$"))
+                                    finalResult.qty = 12;
+                                }
+                                else if (fullname.pcat.ToUpper().Contains("WINE") || fullname.pcat.ToUpper().Contains("SAKE") || fullname.pcat.ToUpper().Contains("SPARKLING"))
+                                {
+                                    finalResult.qty = 50;
+                                }
+                                else
+                                {
+                                    finalResult.qty = 30;
+                                }
+                            }
+                            if (catbased.Contains(StoreId.ToString()))
+                            {
+                                if (fullname.pcat.ToUpper().Contains("CANDY") || fullname.pcat.ToUpper().Contains("SNACK") || fullname.pcat.ToUpper().Contains("DRINK") || fullname.pcat.ToUpper().Contains("SODA")
+                                    || fullname.pcat.ToUpper().Contains("MIXED DRINKS") || fullname.pcat.ToUpper().Contains("WATER") || fullname.pcat.ToUpper().Contains("ENERGY DRINK")
+                                    || fullname.pcat.ToUpper().Contains("MIXERS") || fullname.pcat.ToUpper().Contains("SPORTS DRINK") || fullname.pcat.ToUpper().Contains("BEER"))
+                                {
+                                    finalResult.qty = 50;
+                                }
+                            }
+
+                            PriceResult = new List<QuantityPrice>();
+
+                            List<product> ProductResult = new List<product>();
+
+
+                            if (IncludeContainers.Contains(StoreId.ToString()))
+                            {
+                                var containerrr = dataitem.containers != null ? dataitem.containers.FirstOrDefault(container => container.defaultContainer == true) : null;
+
+                                if (dataitem.containers != null && dataitem.containers.Count > 0 && containerrr.defaultContainer)
+                                {
+                                    foreach (var container in dataitem.containers)
                                     {
-                                        xuom = Regex.Match(xuom.ToUpper(), @"\d+ML$|\d+\s+ML$|\d+[.]\d+ML$|\d+[.]\d+\s+ML$|KEG$|\d+L$|\d+\s+L$|\d+OZ$|\d+\s+OZ$|\d+[.]\d+L$|\d+[.]\d+\s+L$|\d+[.]\d+OZ$|\d+[.]\d+\s+OZ$").ToString();
-                                        finalResult.uom = xuom;
-                                        fullname.uom = xuom;
+                                        if (container.prices != null && container.prices.Count > 0 && container.defaultContainer)
+                                        {
+                                            var pArraycount = container.prices.Count;
+
+                                            for (int j = 0; j < pArraycount; j++)
+                                            {
+                                                var val1 = container.prices[j];
+                                                var pr = new QuantityPrice();
+                                                var value = val1.value;
+                                                var validFrom = val1.validFrom;
+
+                                                var pgx = val1.priceGroup;
+
+                                                if (pgx != null)
+                                                {
+                                                    if (pgx.id == StorePriceGroupId && container.defaultContainer)
+                                                    {
+                                                        pr.id = pgx.id;
+                                                        pr.name = pgx.name;
+                                                        pr.number = pgx.number;
+                                                        pr.value = Convert.ToDecimal(value);
+                                                        pr.validFrom = validFrom;
+                                                        PriceResult.Add(pr);
+                                                    }
+                                                }
+                                            }
+                                        }
+                                        if (container.product != null && container.defaultContainer)
+                                        {
+                                            var prod = new product
+                                            {
+                                                id = container.product.id,
+                                                name = container.product.name,
+                                                number = container.product.number
+                                            };
+
+                                            var match = Regex.Match(prod.name, @"\d+");
+                                            if (match.Success)
+                                            {
+                                                int packSize = int.Parse(match.Value);
+                                                finalResult.pack = packSize;
+                                                fullname.pack = packSize;
+                                            }
+                                            ProductResult.Add(prod);
+                                        }
                                     }
                                 }
-
-                            }
-                        }
-                        fullname.region = "";
-                        fullname.country = "";
-
-                        if (deposit.Contains(StoreId.ToString()))
-                        {
-                            if (!string.IsNullOrEmpty(Dep.ToString()))
-                            {
-                                string dep = Dep.ToString().Trim();
-                                dep = Regex.Replace(dep, "[^0-9.]", "");
-                                finalResult.Deposit = Convert.ToDecimal(dep);
-                            }
-                            else
-                            {
-                                finalResult.Deposit = 0;
-                            }
-                        }
-                        else
-                        {
-                            finalResult.Deposit = 0;
-                        }
-                        if (Includedeposit.Contains(StoreId.ToString()))
-                        {
-                            if (finalResult.StoreProductName.ToUpper().Contains("BOTTLE"))
-                                finalResult.Deposit = finalResult.pack * Deposit;
-                            else
-                                finalResult.Deposit = 0;
-                        }
-                        if (Beerdeposit.Contains(StoreId.ToString()))
-                        {
-                            if (fullname.pcat.ToUpper().Contains("BEER"))
-                                finalResult.Deposit = finalResult.pack * Deposit;
-                            else
-                                finalResult.Deposit = 0;
-                        }
-                        if (qty.Contains(StoreId.ToString()))
-                        {
-                            if (fullname.pcat.ToUpper() == "BEER" || fullname.pcat.ToUpper() == "CRAFT BEER")
-                            {
-                                finalResult.qty = 12;
-                            }
-                            else if (fullname.pcat.ToUpper().Contains("WINE") || fullname.pcat.ToUpper().Contains("SAKE") || fullname.pcat.ToUpper().Contains("SPARKLING"))
-                            {
-                                finalResult.qty = 50;
-                            }
-                            else
-                            {
-                                finalResult.qty = 30;
-                            }
-                        }
-                        if (catbased.Contains(StoreId.ToString()))
-                        {
-                            if (fullname.pcat.ToUpper().Contains("CANDY") || fullname.pcat.ToUpper().Contains("SNACK") || fullname.pcat.ToUpper().Contains("DRINK") || fullname.pcat.ToUpper().Contains("SODA")
-                                || fullname.pcat.ToUpper().Contains("MIXED DRINKS") || fullname.pcat.ToUpper().Contains("WATER") || fullname.pcat.ToUpper().Contains("ENERGY DRINK")
-                                || fullname.pcat.ToUpper().Contains("MIXERS") || fullname.pcat.ToUpper().Contains("SPORTS DRINK") || fullname.pcat.ToUpper().Contains("BEER"))
-                            {
-                                finalResult.qty = 50;
-                            }
-                        }
-
-                        PriceResult = new List<QuantityPrice>();
-
-                        List<product> ProductResult = new List<product>();
-
-
-                        if (IncludeContainers.Contains(StoreId.ToString()))
-                        {
-                            var containerrr = dataitem.containers != null ? dataitem.containers.FirstOrDefault(container => container.defaultContainer == true) : null;
-
-                            if (dataitem.containers != null && dataitem.containers.Count > 0 && containerrr.defaultContainer)
-                            {
-                                foreach (var container in dataitem.containers)
+                                else
                                 {
-                                    if (container.prices != null && container.prices.Count > 0 && container.defaultContainer)
+                                    var p = dataitem.prices;
+                                    if (p != null)
                                     {
-                                        var pArraycount = container.prices.Count;
-
+                                        var pArraycount = p.Count;
+                                        PriceResult = new List<QuantityPrice>();
                                         for (int j = 0; j < pArraycount; j++)
                                         {
-                                            var val1 = container.prices[j];
+                                            var val1 = p[j];
                                             var pr = new QuantityPrice();
                                             var value = val1.value;
                                             var validFrom = val1.validFrom;
@@ -631,35 +687,53 @@ namespace Korona
 
                                             if (pgx != null)
                                             {
-                                                if (pgx.id == StorePriceGroupId && container.defaultContainer)
+
+                                                if (pgx.id == StorePriceGroupId)
                                                 {
                                                     pr.id = pgx.id;
                                                     pr.name = pgx.name;
                                                     pr.number = pgx.number;
                                                     pr.value = Convert.ToDecimal(value);
                                                     pr.validFrom = validFrom;
+
                                                     PriceResult.Add(pr);
+                                                }
+                                                if (sprice.Contains(StoreId.ToString())) //for sprice 11480
+                                                {
+                                                    if (pgx.id == "27e64588-aee4-45b7-a9d6-146961cdd5ca")
+                                                    {
+                                                        pr.id = pgx.id;
+                                                        pr.name = pgx.name;
+                                                        pr.number = pgx.number;
+                                                        pr.value = Convert.ToDecimal(value);
+                                                        pr.validFrom = validFrom;
+
+                                                        PriceResult.Add(pr);
+
+                                                        if (PriceResult.Count > 0)
+                                                        {
+                                                            var MaxvalidFrom = PriceResult.Max(a => a.validFrom);
+                                                            var FinalPrice = PriceResult.Where(a => a.validFrom == MaxvalidFrom).ToList();
+                                                            var Price = FinalPrice[0].value;
+                                                            if (FinalPrice.Count == 2)
+                                                            {
+                                                                if (FinalPrice[1].name == "Member")
+                                                                {
+                                                                    var sprice = FinalPrice[1].value;
+                                                                    finalResult.sprice = sprice.ToString();
+                                                                    if (sprice > 0)
+                                                                    {
+                                                                        finalResult.start = DateTime.Now.ToString("MM/dd/yyyy") + " 0700";
+                                                                        finalResult.end = "12/12/2229 2400";
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    }
                                                 }
                                             }
                                         }
-                                    }
-                                    if (container.product != null && container.defaultContainer)
-                                    {
-                                        var prod = new product
-                                        {
-                                            id = container.product.id,
-                                            name = container.product.name,
-                                            number = container.product.number
-                                        };
 
-                                        var match = Regex.Match(prod.name, @"\d+");
-                                        if (match.Success)
-                                        {
-                                            int packSize = int.Parse(match.Value);
-                                            finalResult.pack = packSize;
-                                            fullname.pack = packSize;
-                                        }
-                                        ProductResult.Add(prod);
                                     }
                                 }
                             }
@@ -723,162 +797,98 @@ namespace Korona
                                                             }
                                                         }
                                                     }
+
+
+
+
                                                 }
                                             }
                                         }
-                                    }
 
+
+
+                                    }
                                 }
                             }
-                        }
-                        else
-                        {
-                            var p = dataitem.prices;
-                            if (p != null)
+
+                            //discount prices from promotion end point and minus them from regualr price to get Sprice
+                            try
                             {
-                                var pArraycount = p.Count;
-                                PriceResult = new List<QuantityPrice>();
-                                for (int j = 0; j < pArraycount; j++)
+                                if (spricepromo.Contains(StoreId.ToString()))
                                 {
-                                    var val1 = p[j];
-                                    var pr = new QuantityPrice();
-                                    var value = val1.value;
-                                    var validFrom = val1.validFrom;
-
-                                    var pgx = val1.priceGroup;
-
-                                    if (pgx != null)
+                                    if (dataitem.tag != null && dataitem.tag.Count > 0 && !string.IsNullOrEmpty(dataitem.tag[0]?.id))
                                     {
+                                        string productTagId = dataitem.tag[0].id;
+                                        bool matched = false;
 
-                                        if (pgx.id == StorePriceGroupId)
+                                        // regular price from PriceResult (already built above this block)
+                                        decimal regularPrice = 0;
+                                        if (PriceResult.Count > 0)
                                         {
-                                            pr.id = pgx.id;
-                                            pr.name = pgx.name;
-                                            pr.number = pgx.number;
-                                            pr.value = Convert.ToDecimal(value);
-                                            pr.validFrom = validFrom;
-
-                                            PriceResult.Add(pr);
+                                            var maxValidFrom = PriceResult.Max(a => a.validFrom);
+                                            var currentPriceEntries = PriceResult.Where(a => a.validFrom == maxValidFrom).ToList();
+                                            regularPrice = (decimal)currentPriceEntries[0].value;
                                         }
-                                        if (sprice.Contains(StoreId.ToString())) //for sprice 11480
+
+                                        foreach (var promotionPage in promotionModel)
                                         {
-                                            if (pgx.id == "27e64588-aee4-45b7-a9d6-146961cdd5ca")
+                                            if (promotionPage?.results == null) continue;
+
+                                            foreach (var promotion in promotionPage.results)
                                             {
-                                                pr.id = pgx.id;
-                                                pr.name = pgx.name;
-                                                pr.number = pgx.number;
-                                                pr.value = Convert.ToDecimal(value);
-                                                pr.validFrom = validFrom;
+                                                var targetTagId = promotion?.benefit?.common?.targetTag?.id;
+                                                if (string.IsNullOrEmpty(targetTagId)) continue;
+                                                if (targetTagId != productTagId) continue;
 
-                                                PriceResult.Add(pr);
+                                                var discountValue = promotion?.benefit?.common?.value;
+                                                if (discountValue == null) continue;
 
-                                                if (PriceResult.Count > 0)
-                                                {
-                                                    var MaxvalidFrom = PriceResult.Max(a => a.validFrom);
-                                                    var FinalPrice = PriceResult.Where(a => a.validFrom == MaxvalidFrom).ToList();
-                                                    var Price = FinalPrice[0].value;
-                                                    if (FinalPrice.Count == 2)
-                                                    {
-                                                        if (FinalPrice[1].name == "Member")
-                                                        {
-                                                            var sprice = FinalPrice[1].value;
-                                                            finalResult.sprice = sprice.ToString();
-                                                            if (sprice > 0)
-                                                            {
-                                                                finalResult.start = DateTime.Now.ToString("MM/dd/yyyy") + " 0700";
-                                                                finalResult.end = "12/12/2229 2400";
-                                                            }
-                                                        }
-                                                    }
-                                                }
+                                                decimal discountedPrice = regularPrice - discountValue.Value;
+                                                if (discountedPrice < 0) discountedPrice = 0;
 
+                                                finalResult.sprice = discountedPrice.ToString();
 
+                                                finalResult.start = DateTime.Now.ToString("MM/dd/yyyy");
+                                                finalResult.end = DateTime.Now.AddDays(1).ToString("MM/dd/yyyy");
 
-
+                                                matched = true;
+                                                break;
                                             }
+
+                                            if (matched) break;
                                         }
                                     }
-
-
-
                                 }
                             }
-                        }
-
-                       //discount prices from promotion end point and minus them from regualr price to get Sprice
-                        try
-                        {
-                            if (spricepromo.Contains(StoreId.ToString()))
+                            catch (Exception ex)
                             {
-                                if (dataitem.tag != null && dataitem.tag.Count > 0 && !string.IsNullOrEmpty(dataitem.tag[0]?.id))
-                                {
-                                    string productTagId = dataitem.tag[0].id;
-                                    bool matched = false;
+                                Console.WriteLine($"sprice/promo block error for product {dataitem?.id} ({dataitem?.name}): {ex.Message}");
+                            }
 
-                                    // regular price from PriceResult (already built above this block)
-                                    decimal regularPrice = 0;
-                                    if (PriceResult.Count > 0)
-                                    {
-                                        var maxValidFrom = PriceResult.Max(a => a.validFrom);
-                                        var currentPriceEntries = PriceResult.Where(a => a.validFrom == maxValidFrom).ToList();
-                                        regularPrice = (decimal) currentPriceEntries[0].value;
-                                    }
 
-                                    foreach (var promotionPage in promotionModel)
-                                    {
-                                        if (promotionPage?.results == null) continue;
+                            if (PriceResult.Count > 0)
+                            {
+                                var MaxvalidFrom = PriceResult.Max(a => a.validFrom);
+                                var FinalPrice = PriceResult.Where(a => a.validFrom == MaxvalidFrom).ToList();
+                                var Price = FinalPrice[0].value;
 
-                                        foreach (var promotion in promotionPage.results)
-                                        {
-                                            var targetTagId = promotion?.benefit?.common?.targetTag?.id;
-                                            if (string.IsNullOrEmpty(targetTagId)) continue;
-                                            if (targetTagId != productTagId) continue;
-
-                                            var discountValue = promotion?.benefit?.common?.value;
-                                            if (discountValue == null) continue;
-
-                                            decimal discountedPrice = regularPrice - discountValue.Value;
-                                            if (discountedPrice < 0) discountedPrice = 0;
-
-                                            finalResult.sprice = discountedPrice.ToString();
-                                           
-                                            finalResult.start = DateTime.Now.ToString("MM/dd/yyyy");
-                                            finalResult.end = DateTime.Now.AddDays(1).ToString("MM/dd/yyyy");
-
-                                            matched = true;
-                                            break;
-                                        }
-
-                                        if (matched) break;
-                                    }
-                                }
+                                finalResult.price = Price;
+                                fullname.Price = Price;
+                                finalResultList.Add(finalResult);
+                                fullnameList.Add(fullname);
                             }
                         }
-                        catch (Exception ex)
+                        catch (Exception e)
                         {
-                            Console.WriteLine($"sprice/promo block error for product {dataitem?.id} ({dataitem?.name}): {ex.Message}");
+                            Console.WriteLine(e.Message);
                         }
-
-
-
-                        if (PriceResult.Count > 0)
-                        {
-                            var MaxvalidFrom = PriceResult.Max(a => a.validFrom);
-                            var FinalPrice = PriceResult.Where(a => a.validFrom == MaxvalidFrom).ToList();
-                            var Price = FinalPrice[0].value;
-
-                            finalResult.price = Price;
-                            fullname.Price = Price;
-                            finalResultList.Add(finalResult);
-                            fullnameList.Add(fullname);
-                        }
-
                     }
                 }
                 if (!stocklist.Contains(StoreId.ToString()))
                 {
                     KoronaStockList(StoreId);
                 }
+                
             }
             catch (Exception e)
             {

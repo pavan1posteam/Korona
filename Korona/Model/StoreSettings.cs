@@ -27,7 +27,7 @@ namespace Korona.Model
 
                  //Handling missing dbsettings.json File 
                string constr = ConfigurationManager.AppSettings["LiquorAppsConnectionString"];
-                Console.WriteLine("constr-from-Appconfig " + constr);
+               // Console.WriteLine("constr-from-Appconfig " + constr);
                 // If App.config doesn't have the connection string, use dbsettings.json
                 if (string.IsNullOrWhiteSpace(constr))
                 {
@@ -44,7 +44,7 @@ namespace Korona.Model
                                 dbcon.liquorappsconnectionstring.Count > 0)
                             {
                                 // Local connection string
-                                constr = dbcon.liquorappsconnectionstring[1]; // [0] is for local & [1] for live db 
+                                constr = dbcon.liquorappsconnectionstring[0]; // [0] is for local & [1] for live db 
                                 Console.WriteLine("constr-2 " + constr);
                             }
                         }
@@ -62,7 +62,7 @@ namespace Korona.Model
                     {
                         cmd.Connection = con;
                         cmd.CommandText = "usp_ts_GetStorePosSetting";
-                        cmd.Parameters.Add(sparams[0]);
+                    //   cmd.Parameters.Add(sparams[0]);
                         cmd.CommandType = CommandType.StoredProcedure;
                         using (SqlDataAdapter da = new SqlDataAdapter())
                         {
