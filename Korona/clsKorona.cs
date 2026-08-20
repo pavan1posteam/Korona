@@ -496,6 +496,7 @@ namespace Korona
                             finalResult.uom = getVolume(finalResult.StoreProductName);
                             fullname.uom = finalResult.uom;
                         }
+
                         if (IncludeContainers.Contains(StoreId.ToString()))
                         {
                             var containerrr = dataitem.containers != null ? dataitem.containers.FirstOrDefault(container => container.defaultContainer == true) : null;
@@ -686,6 +687,8 @@ namespace Korona
                                 
                             }
                         }
+
+                       
                         if (PriceResult.Count > 0)
                         {
                             var MaxvalidFrom = PriceResult.Max(a => a.validFrom);

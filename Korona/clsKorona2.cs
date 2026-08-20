@@ -46,6 +46,7 @@ namespace Korona
         string Beerdeposit = ConfigurationManager.AppSettings["Beerdeposit"];
         string AppendArticleUPCs = ConfigurationManager.AppSettings["AppendArticleUPCs"];
         string spricepromo = ConfigurationManager.AppSettings ["spricepromo"];
+        string exclude200ML = ConfigurationManager.AppSettings["Exclude200ML"];
 
         public int StoreId;
         public string BaseUrl;
@@ -865,6 +866,40 @@ namespace Korona
                                 Console.WriteLine($"sprice/promo block error for product {dataitem?.id} ({dataitem?.name}): {ex.Message}");
                             }
 
+
+                            //As of now only in class-2, if need use in cls1  
+                            #region test for excluding 250 ml 
+                            if (exclude200ML.Contains(StoreId.ToString()))
+                            {
+                                if (!string.IsNullOrEmpty(finalResult.uom))
+                                {
+                                    var match = Regex.Match(
+                                        finalResult.uom.ToUpper().Trim(),
+                                        @"(\d+(?:\.\d+)?)\s*(ML|L|LTR|OZ|FL OZ)"
+                                    );
+
+                                    if (match.Success)
+                                    {
+                                        decimal value = Convert.ToDecimal(match.Groups[1].Value);
+                                        string unit = match.Groups[2].Value;
+
+                                        if (unit == "L" || unit == "LTR")
+                                        {
+                                            value *= 1000m;
+                                        }
+                                        else if (unit == "OZ" || unit == "FL OZ")
+                                        {
+                                            value *= 29.5735m;
+                                        }
+
+                                        if (value < 200m)
+                                        {
+                                            continue;
+                                        }
+                                    }
+                                }
+                            }
+                            #endregion
 
                             if (PriceResult.Count > 0)
                             {
