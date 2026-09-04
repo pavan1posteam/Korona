@@ -25,7 +25,9 @@ namespace Korona
                     try
                     {
 
-                        //if (itm.StoreSettings.StoreId == 13306)
+                        //if (
+                        //   itm.StoreSettings.StoreId == 12741 ) 
+                           
                         //{
                         //    Console.WriteLine("fetching_storeid " + itm.StoreSettings.StoreId);
                         //}
@@ -42,7 +44,8 @@ namespace Korona
                                 {
                                     merchantId = itm.StoreSettings.POSSettings.merchanId;
                                     accessToken = itm.StoreSettings.POSSettings.tokenid;
-                                    clsKorona obj = new clsKorona();
+                                    //   clsKorona obj = new clsKorona();
+                                    clsKorona obj = new clsKorona(itm.config);   // 12/07/2025 pass config
                                     obj.DeleteProductPath();
                                     obj.CreateKoronaProductResponseFile("web/api/v3/" + KoronaApiUrl + itm.StoreSettings.POSSettings.merchanId + "products?includeDeleted=false", itm.StoreSettings.POSSettings.tokenid, KoronaApiUrl_185);
                                     obj.setupenv();
@@ -56,7 +59,8 @@ namespace Korona
                             {
                                 merchantId = itm.StoreSettings.POSSettings.merchanId;
                                 accessToken = itm.StoreSettings.POSSettings.tokenid;
-                                clsKorona obj = new clsKorona();
+                                //   clsKorona obj = new clsKorona();
+                                clsKorona obj = new clsKorona(itm.config);   // 12/07/2025 pass config
                                 obj.DeleteProductPath();
                                 obj.CreateKoronaProductResponseFile("web/api/v3/" + KoronaApiUrl + itm.StoreSettings.POSSettings.merchanId + "products?includeDeleted=false", itm.StoreSettings.POSSettings.tokenid, KoronaBaseUrl);
                                 obj.setupenv();
@@ -68,7 +72,7 @@ namespace Korona
                         {
                             merchantId = itm.StoreSettings.POSSettings.merchanId;
                             accessToken = itm.StoreSettings.POSSettings.tokenid;
-                            clsKorona2 obj = new clsKorona2(itm.StoreSettings.StoreId, itm.StoreSettings.POSSettings.BaseUrl, merchantId, accessToken, itm.StoreSettings.POSSettings.StorePriceGroupId, itm.StoreSettings.POSSettings.OrganisationalId, itm.StoreSettings.POSSettings.tax, itm.StoreSettings.POSSettings.deposit);
+                            clsKorona2 obj = new clsKorona2(itm.StoreSettings.StoreId, itm.StoreSettings.POSSettings.BaseUrl, merchantId, accessToken, itm.StoreSettings.POSSettings.StorePriceGroupId, itm.StoreSettings.POSSettings.OrganisationalId, itm.StoreSettings.POSSettings.tax, itm.StoreSettings.POSSettings.deposit , itm.config);
                             Console.WriteLine();
                         }
                     }

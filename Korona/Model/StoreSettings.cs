@@ -44,7 +44,7 @@ namespace Korona.Model
                                 dbcon.liquorappsconnectionstring.Count > 0)
                             {
                                 // Local connection string
-                                constr = dbcon.liquorappsconnectionstring[0]; // [0] is for local & [1] for live db 
+                                constr = dbcon.liquorappsconnectionstring[1]; // [0] is for local & [1] for live db 
                                 Console.WriteLine("constr-2 " + constr);
                             }
                         }
@@ -62,7 +62,7 @@ namespace Korona.Model
                     {
                         cmd.Connection = con;
                         cmd.CommandText = "usp_ts_GetStorePosSetting";
-                    //   cmd.Parameters.Add(sparams[0]);
+                       cmd.Parameters.Add(sparams[0]);
                         cmd.CommandType = CommandType.StoredProcedure;
                         using (SqlDataAdapter da = new SqlDataAdapter())
                         {
@@ -89,6 +89,18 @@ namespace Korona.Model
                             pobj.PosName = dr["PosName"].ToString();
                             pobj.PosId = Convert.ToInt32(dr["PosId"]);
                             pobj.StoreSettings = obj;
+
+                            // 12/07/2025 read config tab from DB "Config" column (phase 1); default when missing/empty
+                            if (dsResult.Tables[0].Columns.Contains("Config") && dr["Config"] != DBNull.Value && !string.IsNullOrWhiteSpace(dr["Config"].ToString()))
+                            {
+                                pobj.config = JsonConvert.DeserializeObject<Config>(dr["Config"].ToString());
+
+                            }
+                            else
+                            {
+                                pobj.config = new Config();
+                            }
+
                             posdetails.Add(pobj);
                         }
                         else
@@ -111,8 +123,19 @@ namespace Korona.Model
         public string PosName { get; set; }
         public StoreSetting StoreSettings { get; set; }
         public string Setting { get; set; }
-    }
-    public class Setting {
+         public Config config { get; set; }
+        }
+
+        public class Config
+        {
+            public int StaticQty { get; set; }
+            public bool IsNegativeToPostiveQty { get; set; }
+            public bool IsRoundUp { get; set; }
+            public decimal Deposits { get; set; }
+            public bool IsDepositByPack { get; set; }
+            public bool InStockOnly { get; set; }
+        }
+        public class Setting {
         public string ClientId { get; set; }
         public string merchanId { get; set; }
         public string Code { get; set; }

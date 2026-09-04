@@ -1,18 +1,19 @@
-﻿using RestSharp;
+﻿using Korona.Model;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using RestSharp;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Newtonsoft.Json;
-using Korona.Model;
-using Newtonsoft.Json.Linq;
-using System.Data;
-using System.Reflection;
 using System.Configuration;
+using System.Data;
 using System.IO;
-using System.Text.RegularExpressions;
+using System.Linq;
 using System.Net;
+using System.Reflection;
+using System.Text;
+using System.Text.RegularExpressions;
+using System.Threading.Tasks;
+using static Korona.Model.StoreSettings;
 
 namespace Korona
 {
@@ -61,8 +62,10 @@ namespace Korona
         string pathProduct = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), @"ProductDetails_Korona.json");
         string pathStock = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), @"KoronaProductStock.json");
         string PathProductTax = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), @"ProductTax.json");
-        public clsKorona()
+        Config _config;   // 12/07/2025 config tab (phase 1)
+        public clsKorona(Config config)
         {
+            _config = config ?? new Config();   // 12/07/2025 guard null
             if (File.Exists(pathProduct))
             {
                 File.Delete(pathProduct);
@@ -734,14 +737,16 @@ namespace Korona
                     FResult = fullnameList.Where(a => a.Price > 0 && a.pcat.ToUpper() != "CIGAR" && a.pcat.ToUpper() != "CIGARETTES" && a.pcat.ToUpper() != "Tobacco").ToList();
                     PResult = PResult.Where(w => FResult.Any(f => f.sku == w.sku)).ToList();
                 }
-                if (staticqty.Contains(StoreId.ToString()))
+                //if (staticqty.Contains(StoreId.ToString()))
+                //{
+                if (_config.InStockOnly)
                 {
                     PResult = finalResultList.Where(a => a.price > 0 && a.qty > 0).ToList();
                     FResult = fullnameList.Where(a => a.Price > 0 && a.pcat.ToUpper() != "CIGAR" && a.pcat.ToUpper() != "CIGARETTES" && a.pcat.ToUpper() != "Tobacco").ToList();
                     FResult = FResult.Where(x => PResult.Any(y => y.sku == x.sku)).ToList();
                     PResult = PResult.Where(w => FResult.Any(f => f.sku == w.sku)).ToList();
                 }
-
+                
                 GenerateCSVFile.GenerateCSVFiles(PResult, "PRODUCT", StoreId, folderPath);
                 GenerateCSVFile.GenerateCSVFiles(FResult, "FULLNAME", StoreId, folderPath);
             }
@@ -806,10 +811,15 @@ namespace Korona
                     }
                     foreach (var Litem in finalResultList)
                     {
-                        if (Nonstocklistqty.Contains(StoreId.ToString())) // For Store 11404 tktno:15856
+                        // 12/07/2025 config StaticQty (phase 1) - fixed qty for all items when set
+                        if (_config.StaticQty > 0)
+                        {
+                            Litem.qty = _config.StaticQty;
+                        }
+                       /* if (Nonstocklistqty.Contains(StoreId.ToString())) // For Store 11404 tktno:15856
                         {
                             Litem.qty = 999;
-                        }
+                        }*/
                         else if (Litem.Productid == product.id.ToString())
                         {
                             if (difqty.Contains(StoreId.ToString()) && Litem.cat != null && Litem.cat.ToUpper() == "BEER")
@@ -819,6 +829,12 @@ namespace Korona
                             else if (staticqty.Contains(StoreId.ToString()))  //tckt8895
                             {
                                 Litem.qty = Convert.ToInt32(amount.actual);
+                            }
+                            // 12/07/2025 config IsNegativeToPostiveQty  
+                            else if (_config.IsNegativeToPostiveQty)
+                            {
+                                
+                                Litem.qty = Math.Abs(Convert.ToInt32(amount.actual));
                             }
                             else
                             {

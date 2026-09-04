@@ -13,6 +13,7 @@ using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using static Korona.Model.StoreSettings;
 
 namespace Korona
 {
@@ -71,8 +72,8 @@ namespace Korona
         string pathProduct = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), @"ProductDetails_Korona.json");
         string pathStock = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), @"KoronaProductStock.json");
         string PathProductTax = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), @"ProductTax.json");
-
-        public clsKorona2(int _storeid, string _BaseUrl, string _MerchantId, string _ApiKey, string _StorePriceGroupId, string _OrganisationalId, string _tax, decimal _deposit)
+        Config _config;
+        public clsKorona2(int _storeid, string _BaseUrl, string _MerchantId, string _ApiKey, string _StorePriceGroupId, string _OrganisationalId, string _tax, decimal _deposit , Config config)
         {
             StoreId = _storeid;
             BaseUrl = _BaseUrl;
@@ -82,6 +83,7 @@ namespace Korona
             OrganisationalId = _OrganisationalId;
             Tax = _tax;
             Deposit = _deposit;
+            _config = config ?? new Config();
             Start();
         }
         public void Start()
@@ -951,13 +953,15 @@ namespace Korona
                     FResult = fullnameList.Where(a => a.Price > 0 && a.pcat.ToUpper() != "CIGAR" && a.pcat.ToUpper() != "CIGARETTES" && a.pcat.ToUpper() != "Tobacco").ToList();
                     PResult = PResult.Where(w => FResult.Any(f => f.sku == w.sku)).ToList();
                 }
-                if (staticqty.Contains(StoreId.ToString()))
+                //if (staticqty.Contains(StoreId.ToString()))
+                if (_config.InStockOnly)
                 {
                     PResult = finalResultList.Where(a => a.price > 0 && a.qty > 0).ToList();
                     FResult = fullnameList.Where(a => a.Price > 0 && a.pcat.ToUpper() != "CIGAR" && a.pcat.ToUpper() != "CIGARETTES" && a.pcat.ToUpper() != "Tobacco").ToList();
                     FResult = FResult.Where(x => PResult.Any(y => y.sku == x.sku)).ToList();
                     PResult = PResult.Where(w => FResult.Any(f => f.sku == w.sku)).ToList();
                 }
+                
 
                 GenerateCSVFile.GenerateCSVFiles(PResult, "PRODUCT", StoreId, folderPath);
                 GenerateCSVFile.GenerateCSVFiles(FResult, "FULLNAME", StoreId, folderPath);
@@ -980,11 +984,15 @@ namespace Korona
                     }
                     foreach (var Litem in finalResultList)
                     {
-
-                        if (Nonstocklistqty.Contains(StoreId.ToString())) // For Store 11404 tktno:15856 nd 12929 
+                        // 12/07/2025 config StaticQty (phase 1) - fixed qty for all items when set
+                        if (_config.StaticQty > 0)
+                        {
+                            Litem.qty = _config.StaticQty;
+                        }
+                       /* if (Nonstocklistqty.Contains(StoreId.ToString())) // For Store 11404 tktno:15856 nd 12929 
                         {
                             Litem.qty = 999;
-                        }
+                        }*/
                         else if (Litem.Productid == product.id.ToString())
                         {
                             if (difqty.Contains(StoreId.ToString()) && Litem.cat != null && Litem.cat.ToUpper() == "BEER")
@@ -995,6 +1003,12 @@ namespace Korona
                             {
 
                                 Litem.qty = Convert.ToInt32(amount.actual);
+                            }
+                            // 12/07/2025 config IsNegativeToPostiveQty 
+                            else if (_config.IsNegativeToPostiveQty)
+                            {
+                                // old: Litem.qty = Convert.ToInt32(amount.actual) > 0 ? Convert.ToInt32(amount.actual) : 0;
+                                Litem.qty = Math.Abs(Convert.ToInt32(amount.actual));
                             }
                             else
                             {
