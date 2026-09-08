@@ -945,19 +945,19 @@ namespace Korona
             else
             {
                 var PResult = finalResultList.Where(a => a.price > 0).ToList(); //a.qty > 0 &&
-                var FResult = fullnameList.Where(a => a.Price > 0 && a.pcat.ToUpper() != "CIGAR" && a.pcat.ToUpper() != "CIGARETTES" && a.pcat.ToUpper() != "Tobacco" && a.pcat.ToUpper() != "CIGARS").ToList();
+                var FResult = fullnameList.Where(a => a.Price > 0 && a.pcat.ToUpper() != "CIGAR" && a.pcat.ToUpper() != "CIGARETTES" && a.pcat.ToUpper() != "TOBACCO" && a.pcat.ToUpper() != "CIGARS").ToList();
                 PResult = PResult.Where(w => FResult.Any(f => f.sku == w.sku)).ToList();
                 if (catfilter.Contains(StoreId.ToString()))
                 {
                     PResult = finalResultList.Where(a => a.price > 0).ToList();
-                    FResult = fullnameList.Where(a => a.Price > 0 && a.pcat.ToUpper() != "CIGAR" && a.pcat.ToUpper() != "CIGARETTES" && a.pcat.ToUpper() != "Tobacco").ToList();
+                    FResult = fullnameList.Where(a => a.Price > 0 && a.pcat.ToUpper() != "CIGAR" && a.pcat.ToUpper() != "CIGARETTES" && a.pcat.ToUpper() != "TOBACCO").ToList();
                     PResult = PResult.Where(w => FResult.Any(f => f.sku == w.sku)).ToList();
                 }
                 //if (staticqty.Contains(StoreId.ToString()))
                 if (_config.InStockOnly)
                 {
                     PResult = finalResultList.Where(a => a.price > 0 && a.qty > 0).ToList();
-                    FResult = fullnameList.Where(a => a.Price > 0 && a.pcat.ToUpper() != "CIGAR" && a.pcat.ToUpper() != "CIGARETTES" && a.pcat.ToUpper() != "Tobacco").ToList();
+                    FResult = fullnameList.Where(a => a.Price > 0 && a.pcat.ToUpper() != "CIGAR" && a.pcat.ToUpper() != "CIGARETTES" && a.pcat.ToUpper() != "TOBACCO").ToList();
                     FResult = FResult.Where(x => PResult.Any(y => y.sku == x.sku)).ToList();
                     PResult = PResult.Where(w => FResult.Any(f => f.sku == w.sku)).ToList();
                 }
